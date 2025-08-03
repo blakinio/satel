@@ -11,7 +11,14 @@ from homeassistant.const import CONF_HOST, CONF_PORT
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.typing import ConfigType
 
-from .const import DOMAIN, DEFAULT_HOST, DEFAULT_PORT, CONF_CODE
+from .const import (
+    DOMAIN,
+    DEFAULT_HOST,
+    DEFAULT_PORT,
+    CONF_CODE,
+    CONF_ENCODING,
+    DEFAULT_ENCODING,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -21,10 +28,11 @@ PLATFORMS: list[str] = ["sensor", "binary_sensor", "switch"]
 class SatelHub:
     """Simple Satel client communicating over TCP."""
 
-    def __init__(self, host: str, port: int, code: str) -> None:
+    def __init__(self, host: str, port: int, code: str, encoding: str = DEFAULT_ENCODING) -> None:
         self._host = host
         self._port = port
         self._code = code
+        self._encoding = encoding
         self._reader: asyncio.StreamReader | None = None
         self._writer: asyncio.StreamWriter | None = None
 
@@ -41,16 +49,22 @@ class SatelHub:
         )
         await self.send_command(f"LOGIN {self._code}")
 
-    async def send_command(self, command: str) -> str:
+    async def send_command(self, command: str, encoding: str | None = None) -> str:
         """Send a command to the Satel central and return response."""
         if self._writer is None or self._reader is None:
             raise ConnectionError("Not connected to Satel central")
 
+        used_encoding = encoding or self._encoding or DEFAULT_ENCODING
         _LOGGER.debug("Sending command: %s", command)
         self._writer.write((command + "\n").encode())
         await self._writer.drain()
         data = await self._reader.readline()
-        return data.decode().strip()
+        decoded = data.decode(used_encoding, errors="replace").strip()
+        if "\ufffd" in decoded:
+            _LOGGER.warning(
+                "Response decoding with %s failed: %s", used_encoding, data
+            )
+        return decoded
 
     async def get_status(self) -> dict[str, Any]:
         """Retrieve status from Satel central."""
@@ -98,8 +112,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     port = entry.data.get(CONF_PORT, DEFAULT_PORT)
 
     code = entry.data.get(CONF_CODE, "")
+    encoding = entry.data.get(CONF_ENCODING, DEFAULT_ENCODING)
 
-    hub = SatelHub(host, port, code)
+    hub = SatelHub(host, port, code, encoding)
     await hub.connect()
     devices = await hub.discover_devices()
     selected_zones = entry.data.get("zones")
