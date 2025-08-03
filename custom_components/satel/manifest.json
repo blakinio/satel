@@ -10,11 +10,16 @@ codex/update-codeowners-in-manifest.json
  codex/add-readme.md-with-documentation-details
   "documentation": "https://github.com/yourname/satel/blob/main/README.md",
   "requirements": [],
+codex/update-satel-manifest.json
+  "dependencies": [],
+  "codeowners": ["@blakinio"],
+=======
   "codeowners": ["@yourname"],
 =======
   "documentation": "https://www.home-assistant.io/integrations/satel",
   "requirements": ["pysatel==0.0.1"],
   "codeowners": ["@openai"],
+ main
  main
  main
   "config_flow": true,
