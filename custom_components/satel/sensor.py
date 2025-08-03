@@ -7,6 +7,7 @@ import logging
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.device_registry import DeviceInfo
 
 from . import SatelHub
 from .const import DOMAIN
@@ -37,11 +38,32 @@ class SatelZoneSensor(SatelEntity, SensorEntity):
         self._attr_name = f"{name} status"
         self._attr_unique_id = f"satel_zone_status_{zone_id}"
 
+ codex/wrap-send_command-in-try/except-for-connection-errors
+=======
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Return device information for this entity."""
+        return DeviceInfo(
+            identifiers={(DOMAIN, self._hub.host)},
+            manufacturer="Satel",
+            name="Satel Alarm",
+        )
+
+ main
     async def async_update(self) -> None:
         try:
             self._attr_native_value = await self._hub.send_command(
                 f"ZONE {self._zone_id} STATUS"
             )
+ codex/wrap-send_command-in-try/except-for-connection-errors
         except ConnectionError as err:
             _LOGGER.warning("Failed to update zone %s: %s", self._zone_id, err)
             self._attr_native_value = None
+=======
+            self._attr_available = True
+        except ConnectionError as err:
+            _LOGGER.warning(
+                "Could not update zone %s status sensor: %s", self._zone_id, err
+            )
+            self._attr_available = False
+ main
