@@ -8,37 +8,17 @@ from homeassistant.const import CONF_HOST, CONF_PORT
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers import config_validation as cv
 
- codex/extend-config_flow.py-for-credential-handling
-from .const import (
-    DOMAIN,
-    DEFAULT_PORT,
-    DEFAULT_HOST,
-    CONF_ENCRYPTION_KEY,
-    CONF_USER_CODE,
-)
-=======
 from . import SatelHub
-codex/add-translations-for-custom-components
- codex/add-translations-for-custom-components
-from .const import DEFAULT_HOST, DEFAULT_PORT, DOMAIN
-=======
-from .const import DOMAIN, DEFAULT_PORT, DEFAULT_HOST, CONF_CODE
- main
-=======
- codex/extend-config_flow.py-for-credential-handling
-from .const import DOMAIN, DEFAULT_PORT, DEFAULT_HOST, CONF_CODE
- main
-=======
 from .const import (
     DOMAIN,
-    DEFAULT_PORT,
     DEFAULT_HOST,
+    DEFAULT_PORT,
     CONF_CODE,
+    CONF_USER_CODE,
+    CONF_ENCRYPTION_KEY,
     CONF_ENCODING,
     DEFAULT_ENCODING,
 )
- main
- main
 
 
 class SatelConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
