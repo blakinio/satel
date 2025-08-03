@@ -6,37 +6,31 @@ import asyncio
 import logging
 from typing import Any
 
-try:  # pragma: no cover - allows running tests without Home Assistant
-    from homeassistant.config_entries import ConfigEntry
-    from homeassistant.const import CONF_HOST, CONF_PORT
-    from homeassistant.core import HomeAssistant
-    from homeassistant.helpers.typing import ConfigType
-except ModuleNotFoundError:  # pragma: no cover - simple stubs
-    ConfigEntry = HomeAssistant = object
-    CONF_HOST = "host"
-    CONF_PORT = "port"
-    ConfigType = dict[str, Any]
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import CONF_HOST, CONF_PORT
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.typing import ConfigType
 
 from .const import (
     DOMAIN,
     DEFAULT_HOST,
     DEFAULT_PORT,
+codex/clean-up-custom_components-code
+    CONF_ENCODING,
+    DEFAULT_ENCODING,
+=======
     CONF_CODE,
     CONF_USER_CODE,
     CONF_ENCRYPTION_KEY,
     CONF_ENCODING,
     DEFAULT_ENCODING,
     DEFAULT_TIMEOUT,
+ main
 )
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS: list[str] = [
-    "sensor",
-    "binary_sensor",
-    "switch",
-    "alarm_control_panel",
-]
+PLATFORMS: list[str] = ["sensor", "binary_sensor", "switch", "alarm_control_panel"]
 
 
 class SatelHub:
@@ -46,6 +40,10 @@ class SatelHub:
         self,
         host: str,
         port: int,
+ codex/clean-up-custom_components-code
+        code: str = "",
+        encoding: str = DEFAULT_ENCODING,
+=======
         code: str | None = None,
         *,
         user_code: str | None = None,
@@ -56,10 +54,14 @@ class SatelHub:
         reconnect_delay: float = 1.0,
         max_reconnect_delay: float = 30.0,
         max_retries: int = 5,
+main
     ) -> None:
         self._host = host
         self._port = port
         self._code = code
+ codex/clean-up-custom_components-code
+        self._encoding = encoding
+=======
         self._user_code = user_code
         self._encryption_key = encryption_key
         self._encoding = encoding
@@ -68,16 +70,53 @@ class SatelHub:
         self._reconnect_delay = reconnect_delay
         self._max_reconnect_delay = max_reconnect_delay
         self._max_retries = max_retries
+main
         self._reader: asyncio.StreamReader | None = None
         self._writer: asyncio.StreamWriter | None = None
         self._lock = asyncio.Lock()
 
     @property
     def host(self) -> str:
-        """Return the host address of the Satel hub."""
+        """Return host address."""
         return self._host
 
     async def connect(self) -> None:
+ codex/clean-up-custom_components-code
+        """Open TCP connection to the panel."""
+        self._reader, self._writer = await asyncio.open_connection(self._host, self._port)
+        if self._code:
+            await self.send_command(f"LOGIN {self._code}")
+
+    async def send_command(self, command: str) -> str:
+        """Send a command and return the response."""
+        if self._reader is None or self._writer is None:
+            raise ConnectionError("Not connected")
+        async with self._lock:
+            self._writer.write((command + "\n").encode(self._encoding))
+            await self._writer.drain()
+            response = await self._reader.readline()
+        return response.decode(self._encoding).strip()
+
+    async def get_status(self) -> dict[str, Any]:
+        """Retrieve basic status information from the panel."""
+        response = await self.send_command("STATUS")
+        return {"raw": response}
+
+    async def discover_devices(self) -> dict[str, list[dict[str, str]]]:
+        """Return metadata for zones and outputs."""
+        return {
+            "zones": [{"id": "1", "name": "Zone 1"}],
+            "outputs": [{"id": "1", "name": "Output 1"}],
+        }
+
+    async def async_close(self) -> None:
+        """Close the TCP connection."""
+        if self._writer is not None:
+            self._writer.close()
+            await self._writer.wait_closed()
+        self._reader = None
+        self._writer = None
+=======
         """Connect to the Satel central."""
         _LOGGER.debug("Connecting to %s:%s", self._host, self._port)
         try:
@@ -238,10 +277,11 @@ class SatelHub:
     async def disarm(self) -> None:
         """Disarm the alarm."""
         await self.send_command("DISARM")
+ main
 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
-    """Set up Satel integration from YAML."""
+    """Set up integration via YAML (not supported)."""
     return True
 
 
@@ -249,6 +289,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Satel from a config entry."""
     host = entry.data.get(CONF_HOST, DEFAULT_HOST)
     port = entry.data.get(CONF_PORT, DEFAULT_PORT)
+ codex/clean-up-custom_components-code
+    encoding = entry.data.get(CONF_ENCODING, DEFAULT_ENCODING)
+    hub = SatelHub(host, port, encoding=encoding)
+    await hub.connect()
+    devices = await hub.discover_devices()
+=======
     code = entry.data.get(CONF_CODE)
     user_code = entry.data.get(CONF_USER_CODE)
     encryption_key = entry.data.get(CONF_ENCRYPTION_KEY)
@@ -268,6 +314,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         devices = await hub.discover_devices()
     except Exception:  # pragma: no cover - discovery is best effort
         devices = {"zones": [], "outputs": []}
+ main
 
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = {
         "hub": hub,
@@ -286,3 +333,4 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         hub: SatelHub = data["hub"]
         await hub.async_close()
     return unload_ok
+

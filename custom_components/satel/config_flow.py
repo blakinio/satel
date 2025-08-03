@@ -1,13 +1,15 @@
-"""Config flow for Satel integration."""
+"""Config flow for the Satel integration."""
 
 from __future__ import annotations
 
 import voluptuous as vol
+
 from homeassistant import config_entries
 from homeassistant.const import CONF_HOST, CONF_PORT
-from homeassistant.data_entry_flow import FlowResult
-from homeassistant.helpers import config_validation as cv
 
+ codex/clean-up-custom_components-code
+from .const import DOMAIN, DEFAULT_HOST, DEFAULT_PORT
+=======
 from . import SatelHub
 from .const import (
     DOMAIN,
@@ -19,6 +21,7 @@ from .const import (
     CONF_ENCODING,
     DEFAULT_ENCODING,
 )
+ main
 
 
 class SatelConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -26,6 +29,11 @@ class SatelConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     VERSION = 1
 
+ codex/clean-up-custom_components-code
+    async def async_step_user(self, user_input=None):  # type: ignore[override]
+        if user_input is not None:
+            return self.async_create_entry(title="Satel", data=user_input)
+=======
     async def async_step_user(self, user_input: dict | None = None) -> FlowResult:
         """Handle the initial step of the flow."""
         errors: dict[str, str] = {}
@@ -44,11 +52,18 @@ class SatelConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 errors["base"] = "cannot_connect"
             else:
                 return await self.async_step_select()
+ main
 
         data_schema = vol.Schema(
             {
                 vol.Required(CONF_HOST, default=DEFAULT_HOST): str,
                 vol.Required(CONF_PORT, default=DEFAULT_PORT): int,
+ codex/clean-up-custom_components-code
+            }
+        )
+        return self.async_show_form(step_id="user", data_schema=data_schema)
+
+=======
                 vol.Required(CONF_CODE): str,
                 vol.Optional(CONF_ENCODING, default=DEFAULT_ENCODING): str,
             }
@@ -86,3 +101,4 @@ class SatelConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             }
         )
         return self.async_show_form(step_id="select", data_schema=data_schema)
+ main

@@ -1,15 +1,10 @@
 {
-codex/add-error-handling-in-async_step_user
-  "config": {
-    "error": {
-      "cannot_connect": "Nie można połączyć się z centralą Satel."
-=======
   "title": "Alarm Satel",
   "config": {
     "step": {
       "user": {
         "title": "Połącz z Satel",
-        "description": "Skonfiguruj połączenie z centralą Satel.",
+        "description": "Skonfiguruj połączenie z centralą alarmową Satel.",
         "data": {
           "host": "Host",
           "port": "Port"
@@ -27,7 +22,24 @@ codex/add-error-handling-in-async_step_user
     "error": {
       "cannot_connect": "Nie udało się połączyć",
       "unknown": "Nieoczekiwany błąd"
- main
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "zone": {
+        "name": "Strefa"
+      }
+    },
+    "sensor": {
+      "zone_status": {
+        "name": "Status strefy"
+      }
+    },
+    "switch": {
+      "output": {
+        "name": "Wyjście"
+      }
     }
   }
 }
+
