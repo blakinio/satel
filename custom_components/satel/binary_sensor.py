@@ -13,19 +13,31 @@ from .const import DOMAIN
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities
 ) -> None:
+    """Set up Satel zone binary sensors based on config entry."""
     hub: SatelHub = hass.data[DOMAIN][entry.entry_id]
-    async_add_entities([SatelAlarmBinarySensor(hub)], True)
+    status = await hub.get_status()
+    entities = [SatelZoneBinarySensor(hub, zone) for zone in status["zones"]]
+    async_add_entities(entities, True)
 
 
-class SatelAlarmBinarySensor(BinarySensorEntity):
-    """Binary sensor indicating alarm state."""
+class SatelZoneBinarySensor(BinarySensorEntity):
+    """Binary sensor representing a Satel zone."""
 
-    _attr_name = "Satel Alarm"
-
-    def __init__(self, hub: SatelHub) -> None:
+    def __init__(self, hub: SatelHub, zone_id: str) -> None:
         self._hub = hub
-        self._attr_unique_id = "satel_alarm"
+        self._zone_id = zone_id
+        self._attr_unique_id = f"satel_zone_{zone_id}"
+        self._attr_name = f"Satel Zone {zone_id}"
 
     async def async_update(self) -> None:
         data = await self._hub.get_status()
-        self._attr_is_on = data.get("raw") == "ALARM"
+        self._attr_is_on = data["zones"].get(self._zone_id, False)
+
+    @property
+    def device_info(self) -> dict:
+        return {
+            "identifiers": {(DOMAIN, "satel")},
+            "name": "Satel Alarm",
+            "manufacturer": "Satel",
+        }
+

@@ -49,11 +49,23 @@ class SatelHub:
         """Retrieve status from Satel central."""
         try:
             response = await self.send_command("STATUS")
-            # In real implementation, parse response according to protocol
-            return {"raw": response}
+            parsed: dict[str, Any] = {"zones": {}, "outputs": {}}
+            for part in response.split(";"):
+                if not part:
+                    continue
+                if part.startswith("Z"):
+                    zone_id, state = part[1:].split("=")
+                    parsed["zones"][zone_id] = state == "1"
+                elif part.startswith("O"):
+                    out_id, state = part[1:].split("=")
+                    parsed["outputs"][out_id] = state == "1"
+                elif part.startswith("ALARM"):
+                    _, state = part.split("=")
+                    parsed["alarm"] = state == "1"
+            return parsed
         except Exception as err:  # pragma: no cover - demonstration only
             _LOGGER.error("Failed to get status: %s", err)
-            return {"raw": "unknown"}
+            return {"zones": {}, "outputs": {}, "alarm": False}
 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
