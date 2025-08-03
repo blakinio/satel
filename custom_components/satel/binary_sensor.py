@@ -65,6 +65,13 @@ class SatelZoneBinarySensor(SatelEntity, BinarySensorEntity):
     async def async_update(self) -> None:
         try:
             status = await self._hub.send_command(f"ZONE {self._zone_id}")
+ codex/wrap-send_command-in-try/except-for-connection-errors
+        except ConnectionError as err:
+            _LOGGER.warning("Failed to update zone %s: %s", self._zone_id, err)
+            self._attr_is_on = None
+            return
+        self._attr_is_on = status.upper() == "ON"
+=======
             self._attr_is_on = status.upper() == "ON"
             self._attr_available = True
         except ConnectionError as err:
@@ -72,3 +79,4 @@ class SatelZoneBinarySensor(SatelEntity, BinarySensorEntity):
                 "Could not update zone %s status: %s", self._zone_id, err
             )
             self._attr_available = False
+ main

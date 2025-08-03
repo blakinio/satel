@@ -1,4 +1,9 @@
 {
+ codex/add-error-handling-in-async_step_user
+  "config": {
+    "error": {
+      "cannot_connect": "Unable to connect to the Satel hub."
+=======
   "title": "Satel Alarm",
   "config": {
     "step": {
