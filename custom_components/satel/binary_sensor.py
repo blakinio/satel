@@ -19,14 +19,40 @@ _LOGGER = logging.getLogger(__name__)
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities
 ) -> None:
+codex/implement-dynamic-entity-creation-and-updates
+    """Set up Satel zone binary sensors based on config entry."""
+=======
  codex/add-translations-for-custom-components
+ main
     hub: SatelHub = hass.data[DOMAIN][entry.entry_id]
-    async_add_entities([SatelAlarmBinarySensor(hub)], True)
+    status = await hub.get_status()
+    entities = [SatelZoneBinarySensor(hub, zone) for zone in status["zones"]]
+    async_add_entities(entities, True)
 
 
-class SatelAlarmBinarySensor(BinarySensorEntity):
-    """Binary sensor indicating alarm state."""
+class SatelZoneBinarySensor(BinarySensorEntity):
+    """Binary sensor representing a Satel zone."""
 
+ codex/implement-dynamic-entity-creation-and-updates
+    def __init__(self, hub: SatelHub, zone_id: str) -> None:
+        self._hub = hub
+        self._zone_id = zone_id
+        self._attr_unique_id = f"satel_zone_{zone_id}"
+        self._attr_name = f"Satel Zone {zone_id}"
+
+    async def async_update(self) -> None:
+        data = await self._hub.get_status()
+        self._attr_is_on = data["zones"].get(self._zone_id, False)
+
+    @property
+    def device_info(self) -> dict:
+        return {
+            "identifiers": {(DOMAIN, "satel")},
+            "name": "Satel Alarm",
+            "manufacturer": "Satel",
+        }
+
+=======
     _attr_translation_key = "alarm"
 
     def __init__(self, hub: SatelHub) -> None:
@@ -79,4 +105,5 @@ class SatelZoneBinarySensor(SatelEntity, BinarySensorEntity):
                 "Could not update zone %s status: %s", self._zone_id, err
             )
             self._attr_available = False
+ main
  main

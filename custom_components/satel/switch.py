@@ -22,6 +22,27 @@ _LOGGER = logging.getLogger(__name__)
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities
 ) -> None:
+codex/implement-dynamic-entity-creation-and-updates
+    """Set up Satel output switches based on config entry."""
+    hub: SatelHub = hass.data[DOMAIN][entry.entry_id]
+    status = await hub.get_status()
+    entities = [SatelOutputSwitch(hub, output) for output in status["outputs"]]
+    async_add_entities(entities, True)
+
+
+class SatelOutputSwitch(SwitchEntity):
+    """Switch to control a Satel output."""
+
+    def __init__(self, hub: SatelHub, output_id: str) -> None:
+        self._hub = hub
+        self._output_id = output_id
+        self._attr_unique_id = f"satel_output_{output_id}"
+        self._attr_name = f"Satel Output {output_id}"
+        self._attr_is_on = False
+
+    async def async_turn_on(self, **kwargs) -> None:
+        await self._hub.send_command(f"OUTPUT {self._output_id} ON")
+=======
     data = hass.data[DOMAIN][entry.entry_id]
     hub: SatelHub = data["hub"]
     devices = data["devices"]
@@ -79,6 +100,7 @@ class SatelOutputSwitch(SatelEntity, SwitchEntity):
         except ConnectionError as err:
             _LOGGER.warning("Failed to turn on output %s: %s", self._output_id, err)
             return
+ main
         self._attr_is_on = True
         self.async_write_ha_state()
  zquiz2-codex/update-async_turn_on-and-async_turn_off-methods
@@ -96,12 +118,16 @@ class SatelOutputSwitch(SatelEntity, SwitchEntity):
  main
 
     async def async_turn_off(self, **kwargs) -> None:
+ codex/implement-dynamic-entity-creation-and-updates
+        await self._hub.send_command(f"OUTPUT {self._output_id} OFF")
+=======
         try:
             await self._hub.send_command(f"OUTPUT {self._output_id} OFF")
  codex/wrap-send_command-in-try/except-for-connection-errors
         except ConnectionError as err:
             _LOGGER.warning("Failed to turn off output %s: %s", self._output_id, err)
             return
+ main
         self._attr_is_on = False
         self.async_write_ha_state()
  zquiz2-codex/update-async_turn_on-and-async_turn_off-methods
@@ -122,6 +148,19 @@ class SatelOutputSwitch(SatelEntity, SwitchEntity):
  main
 
     async def async_update(self) -> None:
+codex/implement-dynamic-entity-creation-and-updates
+        data = await self._hub.get_status()
+        self._attr_is_on = data["outputs"].get(self._output_id, False)
+
+    @property
+    def device_info(self) -> dict:
+        return {
+            "identifiers": {(DOMAIN, "satel")},
+            "name": "Satel Alarm",
+            "manufacturer": "Satel",
+        }
+
+=======
         try:
             state = await self._hub.send_command(f"OUTPUT {self._output_id} STATE")
  codex/wrap-send_command-in-try/except-for-connection-errors
@@ -138,4 +177,5 @@ class SatelOutputSwitch(SatelEntity, SwitchEntity):
                 "Failed to update state for output %s: %s", self._output_id, err
             )
             self._attr_available = False
+ main
  main
