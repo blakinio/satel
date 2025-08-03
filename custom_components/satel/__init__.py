@@ -45,12 +45,33 @@ class SatelHub:
         """Send a command to the Satel central and return response."""
         if self._writer is None or self._reader is None:
             raise ConnectionError("Not connected to Satel central")
-
-        _LOGGER.debug("Sending command: %s", command)
-        self._writer.write((command + "\n").encode())
-        await self._writer.drain()
-        data = await self._reader.readline()
-        return data.decode().strip()
+        try:
+            _LOGGER.debug("Sending command: %s", command)
+            self._writer.write((command + "\n").encode())
+            await self._writer.drain()
+            data = await self._reader.readline()
+            return data.decode().strip()
+        except (ConnectionError, ConnectionResetError) as err:
+            _LOGGER.warning("Command %s failed: %s", command, err)
+            if self._writer is not None:
+                try:
+                    self._writer.close()
+                    await self._writer.wait_closed()
+                except Exception:  # pragma: no cover - best effort to close
+                    pass
+                finally:
+                    self._writer = None
+                    self._reader = None
+            await self.connect()
+            try:
+                _LOGGER.debug("Retrying command: %s", command)
+                self._writer.write((command + "\n").encode())
+                await self._writer.drain()
+                data = await self._reader.readline()
+                return data.decode().strip()
+            except (ConnectionError, ConnectionResetError) as err:  # pragma: no cover - log and raise
+                _LOGGER.warning("Retry for command %s failed: %s", command, err)
+                raise
 
     async def get_status(self) -> dict[str, Any]:
         """Retrieve status from Satel central."""

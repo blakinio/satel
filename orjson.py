@@ -2,6 +2,7 @@ import json
 
 OPT_APPEND_NEWLINE = 0
 OPT_NON_STR_KEYS = 0
+OPT_SORT_KEYS = 0
 JSONDecodeError = ValueError
 
 class Fragment(bytes):
