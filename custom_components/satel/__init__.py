@@ -22,8 +22,12 @@ from .const import (
     DEFAULT_HOST,
     DEFAULT_PORT,
     CONF_CODE,
+codex/add-configurable-timeout-to-send_command
+    DEFAULT_TIMEOUT,
+=======
     CONF_ENCODING,
     DEFAULT_ENCODING,
+ main
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -39,11 +43,19 @@ PLATFORMS: list[str] = [
 class SatelHub:
     """Simple Satel client communicating over TCP."""
 
+ codex/add-configurable-timeout-to-send_command
+    def __init__(self, host: str, port: int, code: str, timeout: float = DEFAULT_TIMEOUT) -> None:
+        self._host = host
+        self._port = port
+        self._code = code
+        self._timeout = timeout
+=======
     def __init__(self, host: str, port: int, code: str, encoding: str = DEFAULT_ENCODING) -> None:
         self._host = host
         self._port = port
         self._code = code
         self._encoding = encoding
+ main
         self._reader: asyncio.StreamReader | None = None
         self._writer: asyncio.StreamWriter | None = None
         self._lock = asyncio.Lock()
@@ -74,6 +86,9 @@ codex/wrap-asyncio.open_connection-in-try/except
         )
         await self.send_command(f"LOGIN {self._code}")
 
+ codex/add-configurable-timeout-to-send_command
+    async def send_command(self, command: str, timeout: float | None = None) -> str:
+=======
  codex/modify-satelhub.send_command-for-encoding
     async def send_command(self, command: str, encoding: str | None = None) -> str:
 =======
@@ -99,6 +114,7 @@ codex/wrap-asyncio.open_connection-in-try/except
 
     async def send_command(self, command: str) -> str:
  main
+main
         """Send a command to the Satel central and return response."""
  codex/add-asyncio.lock-to-satelhub
         async with self._lock:
@@ -138,6 +154,19 @@ codex/wrap-asyncio.open_connection-in-try/except
                 raise
 =======
 
+ codex/add-configurable-timeout-to-send_command
+        timeout = timeout if timeout is not None else self._timeout
+
+        _LOGGER.debug("Sending command: %s", command)
+        try:
+            self._writer.write((command + "\n").encode())
+            await asyncio.wait_for(self._writer.drain(), timeout)
+            data = await asyncio.wait_for(self._reader.readline(), timeout)
+        except asyncio.TimeoutError as err:
+            _LOGGER.error("Timeout while sending command: %s", command)
+            raise err
+        return data.decode().strip()
+=======
  codex/add-asyncio-lock-in-satelhub
         async with self._lock:
 =======
@@ -201,6 +230,7 @@ codex/wrap-asyncio.open_connection-in-try/except
  main
  main
  main
+main
 
     async def get_status(self) -> dict[str, Any]:
         """Retrieve status from Satel central."""

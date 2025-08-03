@@ -1,4 +1,9 @@
 import asyncio
+ codex/add-configurable-timeout-to-send_command
+import logging
+import sys
+import types
+=======
 codex/wrap-asyncio.open_connection-in-try/except
 import logging
 =======
@@ -19,11 +24,33 @@ import logging
  main
  main
 main
+main
 from unittest.mock import AsyncMock, MagicMock
  main
 
 import pytest
 
+codex/add-configurable-timeout-to-send_command
+# Provide minimal stubs for required Home Assistant modules
+ha = types.ModuleType("homeassistant")
+ha.config_entries = types.ModuleType("homeassistant.config_entries")
+ha.config_entries.ConfigEntry = object
+ha.const = types.ModuleType("homeassistant.const")
+ha.const.CONF_HOST = "host"
+ha.const.CONF_PORT = "port"
+ha.core = types.ModuleType("homeassistant.core")
+ha.core.HomeAssistant = object
+ha.helpers = types.ModuleType("homeassistant.helpers")
+ha.helpers.typing = types.ModuleType("homeassistant.helpers.typing")
+ha.helpers.typing.ConfigType = dict
+
+sys.modules.setdefault("homeassistant", ha)
+sys.modules["homeassistant.config_entries"] = ha.config_entries
+sys.modules["homeassistant.const"] = ha.const
+sys.modules["homeassistant.core"] = ha.core
+sys.modules["homeassistant.helpers"] = ha.helpers
+sys.modules["homeassistant.helpers.typing"] = ha.helpers.typing
+=======
  codex/refactor-async_unload_entry-to-call-async_close
 from custom_components.satel import SatelHub, async_unload_entry, PLATFORMS
 from custom_components.satel.const import DOMAIN
@@ -88,6 +115,7 @@ sys.modules.setdefault("homeassistant.helpers.typing", helpers.typing)
 =======
 sys.modules.setdefault("homeassistant.helpers.typing", typing_mod)
  main
+main
 
 from custom_components.satel import SatelHub
 main
@@ -234,6 +262,27 @@ async def test_parallel_commands_serialized():
     assert responses == ["OK1", "OK2"]
     assert writer.write.call_count == 2
     assert not hub._lock.locked()
+
+
+@pytest.mark.asyncio
+async def test_send_command_timeout(caplog):
+    hub = SatelHub("1.2.3.4", 1234, "abcd")
+    reader = AsyncMock()
+
+    async def slow_read():
+        await asyncio.sleep(1)
+
+    reader.readline = slow_read
+    writer = MagicMock()
+    writer.drain = AsyncMock()
+    writer.write = MagicMock()
+    hub._reader = reader
+    hub._writer = writer
+
+    with caplog.at_level(logging.ERROR), pytest.raises(asyncio.TimeoutError):
+        await hub.send_command("TEST", timeout=0.01)
+
+    assert "Timeout while sending command: TEST" in caplog.text
 
 
 @pytest.mark.asyncio
