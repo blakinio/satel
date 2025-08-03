@@ -4,7 +4,8 @@
   "version": "0.1.0",
   "documentation": "https://www.satel.pl",
   "requirements": [],
-  "codeowners": ["@yourname"],
+  "dependencies": [],
+  "codeowners": ["@blakinio"],
   "config_flow": true,
   "iot_class": "local_polling",
   "description": "Connects to a Satel alarm panel and automatically discovers zones and outputs during setup. Discovery uses a basic LIST command and may not detect all device types."
