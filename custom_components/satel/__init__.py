@@ -56,6 +56,19 @@ class SatelHub:
     async def connect(self) -> None:
         """Connect to the Satel central."""
         _LOGGER.debug("Connecting to %s:%s", self._host, self._port)
+codex/wrap-asyncio.open_connection-in-try/except
+        try:
+            self._reader, self._writer = await asyncio.open_connection(
+                self._host, self._port
+            )
+        except Exception as err:
+            _LOGGER.error(
+                "Failed to connect to %s:%s: %s", self._host, self._port, err
+            )
+            raise ConnectionError(
+                f"Unable to connect to Satel at {self._host}:{self._port}"
+            ) from err
+=======
         self._reader, self._writer = await asyncio.open_connection(
             self._host, self._port
         )
@@ -82,6 +95,7 @@ class SatelHub:
             await self._writer.wait_closed()
             self._writer = None
         self._reader = None
+ main
 
     async def send_command(self, command: str) -> str:
  main

@@ -21,12 +21,16 @@ pytestmark = [pytest.mark.usefixtures("enable_custom_integrations")]
 
 
 @pytest.mark.asyncio
+codex/wrap-asyncio.open_connection-in-try/except
+async def test_config_flow_full(hass, enable_custom_integrations):
+=======
 =======
  main
 async def test_config_flow_full(hass):
 =======
 @pytest.mark.asyncio
 async def test_config_flow_full(hass, enable_custom_integrations):
+ main
  main
     devices = {
         "zones": [{"id": "1", "name": "Zone"}],
