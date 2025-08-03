@@ -19,6 +19,21 @@ _LOGGER = logging.getLogger(__name__)
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities
 ) -> None:
+ codex/add-translations-for-custom-components
+    hub: SatelHub = hass.data[DOMAIN][entry.entry_id]
+    async_add_entities([SatelStatusSensor(hub)], True)
+
+
+class SatelStatusSensor(SensorEntity):
+    """Representation of Satel status sensor."""
+
+    _attr_translation_key = "status"
+
+    def __init__(self, hub: SatelHub) -> None:
+        self._hub = hub
+        self._attr_native_unit_of_measurement = None
+        self._attr_unique_id = "satel_status"
+=======
     data = hass.data[DOMAIN][entry.entry_id]
     hub: SatelHub = data["hub"]
     devices = data["devices"]
@@ -48,6 +63,7 @@ class SatelZoneSensor(SatelEntity, SensorEntity):
             manufacturer="Satel",
             name="Satel Alarm",
         )
+ main
 
  main
     async def async_update(self) -> None:

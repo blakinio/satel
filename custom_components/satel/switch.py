@@ -35,10 +35,17 @@ async def async_setup_entry(
 class SatelOutputSwitch(SatelEntity, SwitchEntity):
     """Switch to control Satel output."""
 
+ codex/add-translations-for-custom-components
+    _attr_translation_key = "output"
+
+    def __init__(self, hub: SatelHub) -> None:
+        self._hub = hub
+=======
     def __init__(self, hub: SatelHub, output_id: str, name: str) -> None:
         super().__init__(hub)
         self._output_id = output_id
         self._attr_name = name
+ main
         self._attr_is_on = False
         self._attr_unique_id = f"satel_output_{output_id}"
 

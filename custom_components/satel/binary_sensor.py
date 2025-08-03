@@ -19,6 +19,20 @@ _LOGGER = logging.getLogger(__name__)
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities
 ) -> None:
+ codex/add-translations-for-custom-components
+    hub: SatelHub = hass.data[DOMAIN][entry.entry_id]
+    async_add_entities([SatelAlarmBinarySensor(hub)], True)
+
+
+class SatelAlarmBinarySensor(BinarySensorEntity):
+    """Binary sensor indicating alarm state."""
+
+    _attr_translation_key = "alarm"
+
+    def __init__(self, hub: SatelHub) -> None:
+        self._hub = hub
+        self._attr_unique_id = "satel_alarm"
+=======
     data = hass.data[DOMAIN][entry.entry_id]
     hub: SatelHub = data["hub"]
     devices = data["devices"]
@@ -46,6 +60,7 @@ class SatelZoneBinarySensor(SatelEntity, BinarySensorEntity):
             manufacturer="Satel",
             name="Satel Alarm",
         )
+ main
 
     async def async_update(self) -> None:
         try:

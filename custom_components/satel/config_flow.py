@@ -18,6 +18,13 @@ from .const import (
 )
 =======
 from . import SatelHub
+codex/add-translations-for-custom-components
+ codex/add-translations-for-custom-components
+from .const import DEFAULT_HOST, DEFAULT_PORT, DOMAIN
+=======
+from .const import DOMAIN, DEFAULT_PORT, DEFAULT_HOST, CONF_CODE
+ main
+=======
  codex/extend-config_flow.py-for-credential-handling
 from .const import DOMAIN, DEFAULT_PORT, DEFAULT_HOST, CONF_CODE
  main
@@ -31,6 +38,7 @@ from .const import (
     DEFAULT_ENCODING,
 )
  main
+ main
 
 
 class SatelConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -41,6 +49,17 @@ class SatelConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_user(self, user_input=None) -> FlowResult:
         errors = {}
         if user_input is not None:
+ codex/add-translations-for-custom-components
+            hub = SatelHub(user_input[CONF_HOST], user_input[CONF_PORT])
+            try:
+                await hub.connect()
+            except Exception:
+                errors["base"] = "cannot_connect"
+            else:
+                return self.async_create_entry(
+                    title=f"Satel {user_input[CONF_HOST]}", data=user_input
+                )
+=======
             self._host = user_input[CONF_HOST]
             self._port = user_input[CONF_PORT]
  codex/handle-network-errors-in-config_flow
@@ -75,8 +94,12 @@ codex/add-error-handling-in-async_step_user
             await hub.connect()
             self._devices = await hub.discover_devices()
             return await self.async_step_select()
+codex/add-translations-for-custom-components
+ main
+=======
 main main
 main
+ main
 
         data_schema = vol.Schema(
             {
