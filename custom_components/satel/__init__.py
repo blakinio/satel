@@ -1,4 +1,4 @@
-"""Satel integration."""
+"""Satel alarm integration."""
 
 from __future__ import annotations
 
