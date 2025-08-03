@@ -1,8 +1,12 @@
 {
-  "name": "ThesslaGreen Modbus",
+codex/edit-hacs.json-for-satel-alarm
+  "name": "Satel Alarm",
+=======
+  "name": "SATEL",
+main
   "content_in_root": false,
   "render_readme": true,
-  "domains": ["climate", "sensor", "binary_sensor", "select", "number", "switch"],
-  "iot_class": "Local Polling",
-  "version": "1.0.0"
+  "domains": ["sensor", "binary_sensor", "switch"],
+  "iot_class": "local_polling",
+  "version": "0.1.0"
 }
