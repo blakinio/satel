@@ -4,7 +4,7 @@ import pytest
 from homeassistant import data_entry_flow
 from homeassistant.const import CONF_HOST, CONF_PORT
 
-from custom_components.satel.const import DOMAIN
+from custom_components.satel.const import DOMAIN, CONF_CODE
 
 
 @pytest.mark.asyncio
@@ -25,7 +25,7 @@ async def test_config_flow_full(hass, enable_custom_integrations):
         assert result["step_id"] == "user"
 
         result = await hass.config_entries.flow.async_configure(
-            result["flow_id"], {CONF_HOST: "1.2.3.4", CONF_PORT: 1234}
+            result["flow_id"], {CONF_HOST: "1.2.3.4", CONF_PORT: 1234, CONF_CODE: "abcd"}
         )
         assert result["type"] == data_entry_flow.FlowResultType.FORM
         assert result["step_id"] == "select"
@@ -39,6 +39,7 @@ async def test_config_flow_full(hass, enable_custom_integrations):
         assert result["data"] == {
             CONF_HOST: "1.2.3.4",
             CONF_PORT: 1234,
+            CONF_CODE: "abcd",
             "zones": ["1"],
             "outputs": ["2"],
         }

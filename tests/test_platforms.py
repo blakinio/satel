@@ -12,7 +12,7 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 async def test_binary_sensor_setup_entry(hass):
     entry = MockConfigEntry(domain=DOMAIN)
     entry.add_to_hass(hass)
-    hub = SatelHub("host", 1234)
+    hub = SatelHub("host", 1234, "code")
     devices = {"zones": [{"id": "1", "name": "Zone"}], "outputs": []}
     hass.data[DOMAIN] = {entry.entry_id: {"hub": hub, "devices": devices}}
 
@@ -29,7 +29,7 @@ async def test_binary_sensor_setup_entry(hass):
 async def test_sensor_setup_entry(hass):
     entry = MockConfigEntry(domain=DOMAIN)
     entry.add_to_hass(hass)
-    hub = SatelHub("host", 1234)
+    hub = SatelHub("host", 1234, "code")
     devices = {"zones": [{"id": "1", "name": "Zone"}], "outputs": []}
     hass.data[DOMAIN] = {entry.entry_id: {"hub": hub, "devices": devices}}
 
@@ -46,7 +46,7 @@ async def test_sensor_setup_entry(hass):
 async def test_switch_setup_entry(hass):
     entry = MockConfigEntry(domain=DOMAIN)
     entry.add_to_hass(hass)
-    hub = SatelHub("host", 1234)
+    hub = SatelHub("host", 1234, "code")
     devices = {"zones": [], "outputs": [{"id": "1", "name": "Out"}]}
     hass.data[DOMAIN] = {entry.entry_id: {"hub": hub, "devices": devices}}
 
