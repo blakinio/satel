@@ -78,6 +78,12 @@ class SatelHub:
     async def send_command(self, command: str) -> str:
  main
         """Send a command to the Satel central and return response."""
+ codex/add-asyncio.lock-to-satelhub
+        async with self._lock:
+            if self._writer is None or self._reader is None:
+                raise ConnectionError("Not connected to Satel central")
+
+=======
         if self._writer is None or self._reader is None:
             raise ConnectionError("Not connected to Satel central")
  codex/wrap-send_command-in-try/except-block
@@ -112,10 +118,14 @@ class SatelHub:
 
  codex/implement-asyncio-lock-in-satelhub
         async with self._lock:
+ main
             _LOGGER.debug("Sending command: %s", command)
             self._writer.write((command + "\n").encode())
             await self._writer.drain()
             data = await self._reader.readline()
+ codex/add-asyncio.lock-to-satelhub
+            return data.decode().strip()
+=======
         return data.decode().strip()
 =======
         used_encoding = encoding or self._encoding or DEFAULT_ENCODING
@@ -157,6 +167,7 @@ class SatelHub:
                 raise ConnectionError(
                     "Failed to send command after reconnection"
                 ) from err2
+ main
  main
  main
  main

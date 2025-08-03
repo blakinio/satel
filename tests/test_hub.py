@@ -1,4 +1,9 @@
 import asyncio
+codex/add-asyncio.lock-to-satelhub
+import sys
+import time
+import types
+=======
  codex/implement-asyncio-lock-in-satelhub
 import sys
 from types import ModuleType
@@ -9,11 +14,29 @@ from unittest.mock import AsyncMock
 =======
 import logging
  main
+ main
 from unittest.mock import AsyncMock, MagicMock
  main
 
 import pytest
 
+ codex/add-asyncio.lock-to-satelhub
+
+homeassistant = types.ModuleType("homeassistant")
+config_entries = types.ModuleType("config_entries")
+class ConfigEntry:  # pragma: no cover - simple stub
+    pass
+
+config_entries.ConfigEntry = ConfigEntry
+const = types.ModuleType("const")
+const.CONF_HOST = "host"
+const.CONF_PORT = "port"
+core = types.ModuleType("core")
+core.HomeAssistant = object
+helpers = types.ModuleType("helpers")
+helpers.typing = types.ModuleType("typing")
+helpers.typing.ConfigType = dict
+=======
 # Minimal stubs for the Home Assistant modules used by SatelHub
 homeassistant = ModuleType("homeassistant")
 config_entries = ModuleType("homeassistant.config_entries")
@@ -44,13 +67,18 @@ homeassistant.config_entries = config_entries
 homeassistant.const = const
 homeassistant.core = core
 homeassistant.helpers = helpers
+ main
 
 sys.modules.setdefault("homeassistant", homeassistant)
 sys.modules.setdefault("homeassistant.config_entries", config_entries)
 sys.modules.setdefault("homeassistant.const", const)
 sys.modules.setdefault("homeassistant.core", core)
 sys.modules.setdefault("homeassistant.helpers", helpers)
+ codex/add-asyncio.lock-to-satelhub
+sys.modules.setdefault("homeassistant.helpers.typing", helpers.typing)
+=======
 sys.modules.setdefault("homeassistant.helpers.typing", typing_mod)
+ main
 
 from custom_components.satel import SatelHub
 
@@ -294,6 +322,32 @@ async def test_discover_devices(monkeypatch):
 
 
 @pytest.mark.asyncio
+ codex/add-asyncio.lock-to-satelhub
+async def test_send_command_serialization():
+    hub = SatelHub("1.2.3.4", 1234)
+    reader = AsyncMock()
+
+    async def delayed_readline():
+        await asyncio.sleep(0.1)
+        return b"OK\n"
+
+    reader.readline = AsyncMock(side_effect=delayed_readline)
+    writer = MagicMock()
+    writer.drain = AsyncMock()
+    writer.write = MagicMock()
+    hub._reader = reader
+    hub._writer = writer
+
+    start = time.perf_counter()
+    responses = await asyncio.gather(
+        hub.send_command("CMD1"),
+        hub.send_command("CMD2"),
+    )
+    elapsed = time.perf_counter() - start
+
+    assert responses == ["OK", "OK"]
+    assert elapsed >= 0.19
+=======
  HEAD
 async def test_discover_devices_invalid_entries(monkeypatch, caplog):
     hub = SatelHub("1.2.3.4", 1234, "abcd")
@@ -367,4 +421,5 @@ async def test_discover_devices_reconnect_failure(monkeypatch, caplog):
         "outputs": [{"id": "1", "name": "Output 1"}],
     }
     assert "Device discovery failed after reconnection" in caplog.text
+ main
  main
