@@ -6,7 +6,9 @@ import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.const import CONF_HOST, CONF_PORT
 from homeassistant.data_entry_flow import FlowResult
+from homeassistant.helpers import config_validation as cv
 
+ codex/extend-config_flow.py-for-credential-handling
 from .const import (
     DOMAIN,
     DEFAULT_PORT,
@@ -14,6 +16,10 @@ from .const import (
     CONF_ENCRYPTION_KEY,
     CONF_USER_CODE,
 )
+=======
+from . import SatelHub
+from .const import DOMAIN, DEFAULT_PORT, DEFAULT_HOST, CONF_CODE
+ main
 
 
 class SatelConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -24,16 +30,47 @@ class SatelConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_user(self, user_input=None) -> FlowResult:
         errors = {}
         if user_input is not None:
-            return self.async_create_entry(
-                title=f"Satel {user_input[CONF_HOST]}", data=user_input
-            )
+            self._host = user_input[CONF_HOST]
+            self._port = user_input[CONF_PORT]
+            self._code = user_input[CONF_CODE]
+            hub = SatelHub(self._host, self._port, self._code)
+            await hub.connect()
+            self._devices = await hub.discover_devices()
+            return await self.async_step_select()
 
         data_schema = vol.Schema(
             {
                 vol.Required(CONF_HOST, default=DEFAULT_HOST): str,
                 vol.Required(CONF_PORT, default=DEFAULT_PORT): int,
+ codex/extend-config_flow.py-for-credential-handling
                 vol.Optional(CONF_USER_CODE): str,
                 vol.Optional(CONF_ENCRYPTION_KEY): str,
+=======
+                vol.Required(CONF_CODE): str,
+ main
             }
         )
         return self.async_show_form(step_id="user", data_schema=data_schema, errors=errors)
+
+    async def async_step_select(self, user_input=None) -> FlowResult:
+        if user_input is not None:
+            return self.async_create_entry(
+                title=f"Satel {self._host}",
+                data={
+                    CONF_HOST: self._host,
+                    CONF_PORT: self._port,
+                    CONF_CODE: self._code,
+                    "zones": user_input.get("zones", []),
+                    "outputs": user_input.get("outputs", []),
+                },
+            )
+
+        zone_options = {z["id"]: z["name"] for z in self._devices.get("zones", [])}
+        output_options = {o["id"]: o["name"] for o in self._devices.get("outputs", [])}
+        data_schema = vol.Schema(
+            {
+                vol.Optional("zones", default=list(zone_options)): cv.multi_select(zone_options),
+                vol.Optional("outputs", default=list(output_options)): cv.multi_select(output_options),
+            }
+        )
+        return self.async_show_form(step_id="select", data_schema=data_schema)
