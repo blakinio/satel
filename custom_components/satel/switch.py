@@ -37,10 +37,12 @@ class SatelOutputSwitch(SatelEntity, SwitchEntity):
     async def async_turn_on(self, **kwargs) -> None:
         await self._hub.send_command(f"OUTPUT {self._output_id} ON")
         self._attr_is_on = True
+        self.async_write_ha_state()
 
     async def async_turn_off(self, **kwargs) -> None:
         await self._hub.send_command(f"OUTPUT {self._output_id} OFF")
         self._attr_is_on = False
+        self.async_write_ha_state()
 
     async def async_update(self) -> None:
         state = await self._hub.send_command(f"OUTPUT {self._output_id} STATE")
