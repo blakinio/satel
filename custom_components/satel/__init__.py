@@ -35,9 +35,17 @@ class SatelHub:
     async def connect(self) -> None:
         """Connect to the Satel central."""
         _LOGGER.debug("Connecting to %s:%s", self._host, self._port)
-        self._reader, self._writer = await asyncio.open_connection(
-            self._host, self._port
-        )
+        try:
+            self._reader, self._writer = await asyncio.open_connection(
+                self._host, self._port
+            )
+        except Exception as err:
+            _LOGGER.error(
+                "Failed to connect to %s:%s: %s", self._host, self._port, err
+            )
+            raise ConnectionError(
+                f"Unable to connect to Satel at {self._host}:{self._port}"
+            ) from err
 
     async def send_command(self, command: str) -> str:
         """Send a command to the Satel central and return response."""

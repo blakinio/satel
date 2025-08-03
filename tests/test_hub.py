@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -19,6 +20,20 @@ async def test_connect(monkeypatch):
     open_mock.assert_awaited_once_with("1.2.3.4", 1234)
     assert hub._reader is reader
     assert hub._writer is writer
+
+
+@pytest.mark.asyncio
+async def test_connect_error(monkeypatch, caplog):
+    open_mock = AsyncMock(side_effect=OSError("boom"))
+    monkeypatch.setattr(asyncio, "open_connection", open_mock)
+
+    hub = SatelHub("1.2.3.4", 1234)
+    with caplog.at_level(logging.ERROR):
+        with pytest.raises(ConnectionError):
+            await hub.connect()
+
+    open_mock.assert_awaited_once_with("1.2.3.4", 1234)
+    assert "Failed to connect" in caplog.text
 
 
 @pytest.mark.asyncio

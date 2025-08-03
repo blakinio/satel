@@ -9,7 +9,7 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 
 @pytest.mark.asyncio
-async def test_binary_sensor_setup_entry(hass):
+async def test_binary_sensor_setup_entry(hass, enable_custom_integrations):
     entry = MockConfigEntry(domain=DOMAIN)
     entry.add_to_hass(hass)
     hub = SatelHub("host", 1234)
@@ -26,7 +26,7 @@ async def test_binary_sensor_setup_entry(hass):
 
 
 @pytest.mark.asyncio
-async def test_sensor_setup_entry(hass):
+async def test_sensor_setup_entry(hass, enable_custom_integrations):
     entry = MockConfigEntry(domain=DOMAIN)
     entry.add_to_hass(hass)
     hub = SatelHub("host", 1234)
@@ -43,7 +43,7 @@ async def test_sensor_setup_entry(hass):
 
 
 @pytest.mark.asyncio
-async def test_switch_setup_entry(hass):
+async def test_switch_setup_entry(hass, enable_custom_integrations):
     entry = MockConfigEntry(domain=DOMAIN)
     entry.add_to_hass(hass)
     hub = SatelHub("host", 1234)
