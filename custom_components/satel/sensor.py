@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import logging
+
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -9,6 +11,8 @@ from homeassistant.core import HomeAssistant
 from . import SatelHub
 from .const import DOMAIN
 from .entity import SatelEntity
+
+_LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(
@@ -34,6 +38,10 @@ class SatelZoneSensor(SatelEntity, SensorEntity):
         self._attr_unique_id = f"satel_zone_status_{zone_id}"
 
     async def async_update(self) -> None:
-        self._attr_native_value = await self._hub.send_command(
-            f"ZONE {self._zone_id} STATUS"
-        )
+        try:
+            self._attr_native_value = await self._hub.send_command(
+                f"ZONE {self._zone_id} STATUS"
+            )
+        except ConnectionError as err:
+            _LOGGER.warning("Failed to update zone %s: %s", self._zone_id, err)
+            self._attr_native_value = None
