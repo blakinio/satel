@@ -2,7 +2,7 @@
   "domain": "satel",
   "name": "Satel Alarm",
   "version": "0.1.0",
-  "documentation": "https://www.satel.pl",
+  "documentation": "https://github.com/yourname/satel/blob/main/README.md",
   "requirements": [],
   "codeowners": ["@yourname"],
   "config_flow": true,
