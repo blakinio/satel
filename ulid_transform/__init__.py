@@ -32,6 +32,13 @@ def bytes_to_ulid(b):
 
 
 def bytes_to_ulid_or_none(b):
+ codex/wrap-send_command-in-try/except-block
+    return None
+
+
+def ulid_to_bytes_or_none(u):
+    return None
+=======
     try:
         return bytes_to_ulid(b)
     except Exception:
@@ -43,3 +50,4 @@ def ulid_to_bytes_or_none(u):
         return ulid_to_bytes(u)
     except Exception:
         return None
+ main
