@@ -12,18 +12,21 @@ async def test_connect(monkeypatch):
     writer = AsyncMock()
     open_mock = AsyncMock(return_value=(reader, writer))
     monkeypatch.setattr(asyncio, "open_connection", open_mock)
+    send_mock = AsyncMock()
+    monkeypatch.setattr(SatelHub, "send_command", send_mock)
 
-    hub = SatelHub("1.2.3.4", 1234)
+    hub = SatelHub("1.2.3.4", 1234, "abcd")
     await hub.connect()
 
     open_mock.assert_awaited_once_with("1.2.3.4", 1234)
+    send_mock.assert_awaited_once_with("LOGIN abcd")
     assert hub._reader is reader
     assert hub._writer is writer
 
 
 @pytest.mark.asyncio
 async def test_send_command(monkeypatch):
-    hub = SatelHub("1.2.3.4", 1234)
+    hub = SatelHub("1.2.3.4", 1234, "abcd")
     reader = AsyncMock()
     reader.readline = AsyncMock(return_value=b"OK\n")
     writer = MagicMock()
@@ -42,14 +45,14 @@ async def test_send_command(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_send_command_not_connected():
-    hub = SatelHub("1.2.3.4", 1234)
+    hub = SatelHub("1.2.3.4", 1234, "abcd")
     with pytest.raises(ConnectionError):
         await hub.send_command("TEST")
 
 
 @pytest.mark.asyncio
 async def test_discover_devices(monkeypatch):
-    hub = SatelHub("1.2.3.4", 1234)
+    hub = SatelHub("1.2.3.4", 1234, "abcd")
     monkeypatch.setattr(
         hub,
         "send_command",

@@ -11,7 +11,7 @@ from homeassistant.const import CONF_HOST, CONF_PORT
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.typing import ConfigType
 
-from .const import DOMAIN, DEFAULT_HOST, DEFAULT_PORT
+from .const import DOMAIN, DEFAULT_HOST, DEFAULT_PORT, CONF_CODE
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -21,9 +21,10 @@ PLATFORMS: list[str] = ["sensor", "binary_sensor", "switch"]
 class SatelHub:
     """Simple Satel client communicating over TCP."""
 
-    def __init__(self, host: str, port: int) -> None:
+    def __init__(self, host: str, port: int, code: str) -> None:
         self._host = host
         self._port = port
+        self._code = code
         self._reader: asyncio.StreamReader | None = None
         self._writer: asyncio.StreamWriter | None = None
 
@@ -38,6 +39,7 @@ class SatelHub:
         self._reader, self._writer = await asyncio.open_connection(
             self._host, self._port
         )
+        await self.send_command(f"LOGIN {self._code}")
 
     async def send_command(self, command: str) -> str:
         """Send a command to the Satel central and return response."""
@@ -95,7 +97,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     host = entry.data.get(CONF_HOST, DEFAULT_HOST)
     port = entry.data.get(CONF_PORT, DEFAULT_PORT)
 
-    hub = SatelHub(host, port)
+    code = entry.data.get(CONF_CODE, "")
+
+    hub = SatelHub(host, port, code)
     await hub.connect()
     devices = await hub.discover_devices()
     selected_zones = entry.data.get("zones")

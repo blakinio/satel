@@ -9,7 +9,7 @@ from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers import config_validation as cv
 
 from . import SatelHub
-from .const import DOMAIN, DEFAULT_PORT, DEFAULT_HOST
+from .const import DOMAIN, DEFAULT_PORT, DEFAULT_HOST, CONF_CODE
 
 
 class SatelConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -22,7 +22,8 @@ class SatelConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             self._host = user_input[CONF_HOST]
             self._port = user_input[CONF_PORT]
-            hub = SatelHub(self._host, self._port)
+            self._code = user_input[CONF_CODE]
+            hub = SatelHub(self._host, self._port, self._code)
             await hub.connect()
             self._devices = await hub.discover_devices()
             return await self.async_step_select()
@@ -31,6 +32,7 @@ class SatelConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             {
                 vol.Required(CONF_HOST, default=DEFAULT_HOST): str,
                 vol.Required(CONF_PORT, default=DEFAULT_PORT): int,
+                vol.Required(CONF_CODE): str,
             }
         )
         return self.async_show_form(step_id="user", data_schema=data_schema, errors=errors)
@@ -42,6 +44,7 @@ class SatelConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 data={
                     CONF_HOST: self._host,
                     CONF_PORT: self._port,
+                    CONF_CODE: self._code,
                     "zones": user_input.get("zones", []),
                     "outputs": user_input.get("outputs", []),
                 },

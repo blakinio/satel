@@ -8,7 +8,7 @@ from custom_components.satel.switch import SatelOutputSwitch
 
 @pytest.mark.asyncio
 async def test_turn_on_writes_state():
-    hub = SatelHub("host", 1234)
+    hub = SatelHub("host", 1234, "code")
     hub.send_command = AsyncMock()
     switch = SatelOutputSwitch(hub, "1", "Out")
     switch.async_write_ha_state = MagicMock()
@@ -21,7 +21,7 @@ async def test_turn_on_writes_state():
 
 @pytest.mark.asyncio
 async def test_turn_off_writes_state():
-    hub = SatelHub("host", 1234)
+    hub = SatelHub("host", 1234, "code")
     hub.send_command = AsyncMock()
     switch = SatelOutputSwitch(hub, "1", "Out")
     switch._attr_is_on = True
