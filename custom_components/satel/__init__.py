@@ -138,13 +138,20 @@ codex/wrap-asyncio.open_connection-in-try/except
                 raise
 =======
 
+ codex/add-asyncio-lock-in-satelhub
+        async with self._lock:
+=======
  codex/implement-asyncio-lock-in-satelhub
         async with self._lock:
+ main
  main
             _LOGGER.debug("Sending command: %s", command)
             self._writer.write((command + "\n").encode())
             await self._writer.drain()
             data = await self._reader.readline()
+ codex/add-asyncio-lock-in-satelhub
+        return data.decode().strip()
+=======
  codex/add-asyncio.lock-to-satelhub
             return data.decode().strip()
 =======
@@ -189,6 +196,7 @@ codex/wrap-asyncio.open_connection-in-try/except
                 raise ConnectionError(
                     "Failed to send command after reconnection"
                 ) from err2
+ main
  main
  main
  main
