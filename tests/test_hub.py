@@ -1,12 +1,68 @@
 import asyncio
+ codex/add-unit-tests-for-satelhub-integration
+from unittest.mock import AsyncMock
+=======
 import logging
 from unittest.mock import AsyncMock, MagicMock
+ main
 
 import pytest
 
 from custom_components.satel import SatelHub
 
 
+ codex/add-unit-tests-for-satelhub-integration
+class DummyWriter:
+    """Helper writer object for tests."""
+
+    def __init__(self):
+        self.data = b""
+
+    def write(self, data: bytes) -> None:
+        self.data += data
+
+    async def drain(self) -> None:
+        pass
+
+    def close(self) -> None:  # pragma: no cover - cleanup
+        pass
+
+    async def wait_closed(self) -> None:  # pragma: no cover - cleanup
+        pass
+
+
+@pytest.mark.asyncio
+async def test_connect_and_send_command(monkeypatch):
+    """Test that commands are sent and responses are received."""
+    reader = asyncio.StreamReader()
+    writer = DummyWriter()
+
+    async def mock_open_connection(host, port):
+        return reader, writer
+
+    monkeypatch.setattr(asyncio, "open_connection", mock_open_connection)
+
+    hub = SatelHub("test", 1234)
+    await hub.connect()
+
+    reader.feed_data(b"PONG\n")
+    result = await hub.send_command("PING")
+
+    assert result == "PONG"
+    assert writer.data == b"PING\n"
+
+
+@pytest.mark.asyncio
+async def test_get_status(monkeypatch):
+    """Verify get_status wraps send_command output."""
+    hub = SatelHub("host", 1234)
+    monkeypatch.setattr(hub, "send_command", AsyncMock(return_value="ALARM"))
+
+    status = await hub.get_status()
+
+    hub.send_command.assert_awaited_once_with("STATUS")
+    assert status == {"raw": "ALARM"}
+=======
 @pytest.mark.asyncio
 async def test_connect(monkeypatch):
     reader = AsyncMock()
@@ -118,7 +174,7 @@ async def test_discover_devices(monkeypatch):
 
 
 @pytest.mark.asyncio
-<<<<<<< HEAD
+ HEAD
 async def test_discover_devices_invalid_entries(monkeypatch, caplog):
     hub = SatelHub("1.2.3.4", 1234, "abcd")
     monkeypatch.setattr(
@@ -150,7 +206,7 @@ async def test_discover_devices_missing_delimiter(monkeypatch, caplog, response)
         "outputs": [{"id": "1", "name": "Output 1"}],
     }
     assert response in caplog.text
->>>>>>> pr/44
+ pr/44
 
 
 @pytest.mark.asyncio
@@ -191,3 +247,4 @@ async def test_discover_devices_reconnect_failure(monkeypatch, caplog):
         "outputs": [{"id": "1", "name": "Output 1"}],
     }
     assert "Device discovery failed after reconnection" in caplog.text
+ main
