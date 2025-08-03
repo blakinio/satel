@@ -161,6 +161,16 @@ codex/wrap-asyncio.open_connection-in-try/except
         self._reader = None
  main
 
+ codex/update-get_status-and-send_command-methods
+    async def send_command(self, command: str | bytes) -> bytes:
+        """Send a command using Satel TCP framing.
+
+        The Satel protocol frames every payload with a start byte (0xFE),
+        a length byte and a checksum.  ``command`` may either be a string or
+        raw bytes representing the protocol command.  The payload returned
+        by the central is returned without framing.
+        """
+=======
     async def send_command(self, command: str) -> str:
  main
 main
@@ -171,6 +181,7 @@ main
                 raise ConnectionError("Not connected to Satel central")
 
 =======
+ main
         if self._writer is None or self._reader is None:
             raise ConnectionError("Not connected to Satel central")
  codex/wrap-send_command-in-try/except-block
@@ -203,6 +214,35 @@ main
                 raise
 =======
 
+codex/update-get_status-and-send_command-methods
+        payload = command.encode() if isinstance(command, str) else command
+
+        frame = bytearray()
+        frame.append(0xFE)
+        frame.append(len(payload))
+        frame.extend(payload)
+        checksum = (0x100 - (sum(frame[1:]) % 0x100)) & 0xFF
+        frame.append(checksum)
+
+        _LOGGER.debug("Sending frame: %s", frame.hex())
+        self._writer.write(frame)
+        await self._writer.drain()
+
+        start = await self._reader.readexactly(1)
+        if start[0] != 0xFE:
+            raise ConnectionError("Invalid start byte in response")
+
+        length_byte = await self._reader.readexactly(1)
+        length = length_byte[0]
+        payload = await self._reader.readexactly(length)
+        checksum_byte = await self._reader.readexactly(1)
+        calc_checksum = (0x100 - ((length + sum(payload)) % 0x100)) & 0xFF
+        if checksum_byte[0] != calc_checksum:
+            raise ConnectionError("Checksum mismatch")
+
+        _LOGGER.debug("Received payload: %s", payload.hex())
+        return payload
+=======
  codex/add-configurable-timeout-to-send_command
         timeout = timeout if timeout is not None else self._timeout
 
@@ -280,10 +320,42 @@ main
  main
  main
 main
+ main
 
     async def get_status(self) -> dict[str, Any]:
-        """Retrieve status from Satel central."""
+        """Retrieve and parse status information from the Satel central."""
         try:
+ codex/update-get_status-and-send_command-methods
+            # 0x7F is the "status" command in Satel protocol
+            data = await self.send_command(b"\x7F")
+
+            # Example layout: 4 bytes zones, 2 bytes partitions, 1 byte alarms
+            zones_bits = int.from_bytes(data[0:4], "little")
+            partitions_bits = int.from_bytes(data[4:6], "little")
+            alarms_bits = data[6] if len(data) > 6 else 0
+
+            zones = {
+                zone + 1: bool(zones_bits & (1 << zone))
+                for zone in range(32)
+            }
+            partitions = {
+                part + 1: bool(partitions_bits & (1 << part))
+                for part in range(16)
+            }
+            alarms = {
+                "alarm": bool(alarms_bits & 0x01),
+            }
+
+            return {
+                "zones": zones,
+                "partitions": partitions,
+                "alarms": alarms,
+                "raw": "ALARM" if any(alarms.values()) else "OK",
+            }
+        except Exception as err:  # pragma: no cover - demonstration only
+            _LOGGER.error("Failed to get status: %s", err)
+            return {"zones": {}, "partitions": {}, "alarms": {}, "raw": "unknown"}
+=======
             response = await self.send_command("STATUS")
             parsed: dict[str, Any] = {"zones": {}, "outputs": {}}
             for part in response.split(";"):
@@ -388,6 +460,7 @@ main
         """Disarm the alarm."""
         await self.send_command("DISARM")
  main
+main
 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
