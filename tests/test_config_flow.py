@@ -7,6 +7,9 @@ from homeassistant.const import CONF_HOST, CONF_PORT
 from custom_components.satel.const import DOMAIN
 
 
+pytestmark = [pytest.mark.usefixtures("enable_custom_integrations")]
+
+
 @pytest.mark.asyncio
 async def test_config_flow_full(hass):
     devices = {
