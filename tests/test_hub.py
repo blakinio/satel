@@ -328,6 +328,14 @@ async def test_discover_devices(monkeypatch):
 
 
 @pytest.mark.asyncio
+ codex/add-async_close-method-to-satelhub
+async def test_async_close():
+    hub = SatelHub("1.2.3.4", 1234)
+    writer = MagicMock()
+    writer.wait_closed = AsyncMock()
+    hub._writer = writer
+    hub._reader = AsyncMock()
+=======
  codex/refactor-async_unload_entry-to-call-async_close
 async def test_async_close():
     hub = SatelHub("1.2.3.4", 1234)
@@ -335,12 +343,16 @@ async def test_async_close():
     writer.close = MagicMock()
     writer.wait_closed = AsyncMock()
     hub._writer = writer
+ main
 
     await hub.async_close()
 
     writer.close.assert_called_once()
     writer.wait_closed.assert_awaited_once()
     assert hub._writer is None
+ codex/add-async_close-method-to-satelhub
+    assert hub._reader is None
+=======
 
 
 @pytest.mark.asyncio
@@ -462,3 +474,4 @@ async def test_discover_devices_reconnect_failure(monkeypatch, caplog):
  main
  main
 main
+ main
