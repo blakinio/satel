@@ -15,8 +15,17 @@ from .const import (
     DOMAIN,
     DEFAULT_HOST,
     DEFAULT_PORT,
+codex/clean-up-custom_components-code
     CONF_ENCODING,
     DEFAULT_ENCODING,
+=======
+    CONF_CODE,
+    CONF_USER_CODE,
+    CONF_ENCRYPTION_KEY,
+    CONF_ENCODING,
+    DEFAULT_ENCODING,
+    DEFAULT_TIMEOUT,
+ main
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -31,13 +40,37 @@ class SatelHub:
         self,
         host: str,
         port: int,
+ codex/clean-up-custom_components-code
         code: str = "",
         encoding: str = DEFAULT_ENCODING,
+=======
+        code: str | None = None,
+        *,
+        user_code: str | None = None,
+        encryption_key: str | None = None,
+        encoding: str = DEFAULT_ENCODING,
+        timeout: float = DEFAULT_TIMEOUT,
+        connect_timeout: float = 10.0,
+        reconnect_delay: float = 1.0,
+        max_reconnect_delay: float = 30.0,
+        max_retries: int = 5,
+main
     ) -> None:
         self._host = host
         self._port = port
         self._code = code
+ codex/clean-up-custom_components-code
         self._encoding = encoding
+=======
+        self._user_code = user_code
+        self._encryption_key = encryption_key
+        self._encoding = encoding
+        self._timeout = timeout
+        self._connect_timeout = connect_timeout
+        self._reconnect_delay = reconnect_delay
+        self._max_reconnect_delay = max_reconnect_delay
+        self._max_retries = max_retries
+main
         self._reader: asyncio.StreamReader | None = None
         self._writer: asyncio.StreamWriter | None = None
         self._lock = asyncio.Lock()
@@ -48,6 +81,7 @@ class SatelHub:
         return self._host
 
     async def connect(self) -> None:
+ codex/clean-up-custom_components-code
         """Open TCP connection to the panel."""
         self._reader, self._writer = await asyncio.open_connection(self._host, self._port)
         if self._code:
@@ -82,6 +116,168 @@ class SatelHub:
             await self._writer.wait_closed()
         self._reader = None
         self._writer = None
+=======
+        """Connect to the Satel central."""
+        _LOGGER.debug("Connecting to %s:%s", self._host, self._port)
+        try:
+            self._reader, self._writer = await asyncio.wait_for(
+                asyncio.open_connection(self._host, self._port),
+                timeout=self._connect_timeout,
+            )
+        except (asyncio.TimeoutError, OSError) as err:  # pragma: no cover - network error
+            _LOGGER.error(
+                "Failed to connect to %s:%s: %s", self._host, self._port, err
+            )
+            raise ConnectionError(err) from err
+
+        if self._user_code or self._encryption_key:
+            auth_parts: list[str] = []
+            if self._user_code:
+                auth_parts.append(self._user_code)
+            if self._encryption_key:
+                auth_parts.append(self._encryption_key)
+            auth_cmd = "AUTH " + " ".join(auth_parts)
+            _LOGGER.debug("Authenticating with Satel central")
+            self._writer.write((auth_cmd + "\n").encode(self._encoding))
+            await self._writer.drain()
+            response = await self._reader.readline()
+            if response.decode(self._encoding).strip().upper() != "OK":
+                await self._close_connection()
+                raise ConnectionError("Authentication failed")
+
+        if self._code:
+            await self.send_command(f"LOGIN {self._code}")
+
+    async def send_command(
+        self,
+        command: str,
+        *,
+        timeout: float | None = None,
+        encoding: str | None = None,
+    ) -> str:
+        """Send a command to the Satel central and return response."""
+        used_timeout = timeout or self._timeout
+        used_encoding = encoding or self._encoding
+
+        async with self._lock:
+            if self._writer is None or self._reader is None:
+                raise ConnectionError("Not connected to Satel central")
+
+            for attempt in range(2):
+                try:
+                    _LOGGER.debug("Sending command: %s", command)
+                    self._writer.write((command + "\n").encode(used_encoding))
+                    await asyncio.wait_for(self._writer.drain(), used_timeout)
+                    data = await asyncio.wait_for(
+                        self._reader.readline(), used_timeout
+                    )
+                    if not data:
+                        raise ConnectionError("No data received")
+                    return data.decode(used_encoding).strip()
+                except asyncio.TimeoutError:
+                    _LOGGER.error("Timeout while sending command: %s", command)
+                    raise
+                except (
+                    ConnectionResetError,
+                    BrokenPipeError,
+                    OSError,
+                    asyncio.IncompleteReadError,
+                ) as err:
+                    _LOGGER.warning(
+                        "Connection error while sending '%s': %s", command, err
+                    )
+                    await self._close_connection()
+                    if attempt == 0:
+                        try:
+                            await self.connect()
+                        except Exception as conn_err:
+                            raise ConnectionError(
+                                "Failed to reconnect to Satel central"
+                            ) from conn_err
+                        continue
+                    raise ConnectionError(
+                        "Failed to send command after reconnection"
+                    ) from err
+
+    async def _reconnect(self) -> None:
+        """Attempt to reconnect with exponential backoff."""
+        await self._close_connection()
+        delay = self._reconnect_delay
+        for _ in range(self._max_retries):
+            _LOGGER.debug("Reconnecting in %s seconds", delay)
+            await asyncio.sleep(delay)
+            try:
+                await self.connect()
+                _LOGGER.info("Reconnected to Satel central")
+                return
+            except ConnectionError:
+                delay = min(delay * 2, self._max_reconnect_delay)
+        raise ConnectionError("Unable to reconnect to Satel")
+
+    async def _close_connection(self) -> None:
+        """Close the current TCP connection."""
+        if self._writer is not None:
+            self._writer.close()
+            try:
+                await self._writer.wait_closed()
+            except Exception:  # pragma: no cover - best effort
+                pass
+        self._reader = None
+        self._writer = None
+
+    async def async_close(self) -> None:
+        """Close the connection to the Satel central."""
+        await self._close_connection()
+
+    async def get_status(self) -> dict[str, Any]:
+        """Retrieve status information from the Satel central."""
+        try:
+            response = await self.send_command("STATUS")
+            return {"raw": response}
+        except Exception as err:  # pragma: no cover - demonstration only
+            _LOGGER.error("Failed to get status: %s", err)
+            return {"raw": "unknown"}
+
+    async def discover_devices(self) -> dict[str, list[dict[str, Any]]]:
+        """Discover zones and outputs available on the panel."""
+        metadata: dict[str, list[dict[str, Any]]] = {"zones": [], "outputs": []}
+        try:
+            response = await self.send_command("LIST")
+        except Exception as err:  # pragma: no cover - demonstration only
+            _LOGGER.error("Device discovery failed: %s", err)
+            return metadata
+
+        parts = response.split("|", 1)
+        if len(parts) != 2:
+            _LOGGER.error("Unexpected LIST response: %s", response)
+            return metadata
+        zones_part, outputs_part = parts
+        for item in zones_part.split(","):
+            if not item:
+                continue
+            if "=" not in item:
+                _LOGGER.warning("Invalid zone entry: %s", item)
+                continue
+            zone_id, name = item.split("=", 1)
+            metadata["zones"].append({"id": zone_id, "name": name})
+        for item in outputs_part.split(","):
+            if not item:
+                continue
+            if "=" not in item:
+                _LOGGER.warning("Invalid output entry: %s", item)
+                continue
+            out_id, name = item.split("=", 1)
+            metadata["outputs"].append({"id": out_id, "name": name})
+        return metadata
+
+    async def arm(self) -> None:
+        """Arm the alarm."""
+        await self.send_command("ARM")
+
+    async def disarm(self) -> None:
+        """Disarm the alarm."""
+        await self.send_command("DISARM")
+ main
 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
@@ -93,10 +289,32 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Satel from a config entry."""
     host = entry.data.get(CONF_HOST, DEFAULT_HOST)
     port = entry.data.get(CONF_PORT, DEFAULT_PORT)
+ codex/clean-up-custom_components-code
     encoding = entry.data.get(CONF_ENCODING, DEFAULT_ENCODING)
     hub = SatelHub(host, port, encoding=encoding)
     await hub.connect()
     devices = await hub.discover_devices()
+=======
+    code = entry.data.get(CONF_CODE)
+    user_code = entry.data.get(CONF_USER_CODE)
+    encryption_key = entry.data.get(CONF_ENCRYPTION_KEY)
+    encoding = entry.data.get(CONF_ENCODING, DEFAULT_ENCODING)
+
+    hub = SatelHub(
+        host,
+        port,
+        code,
+        user_code=user_code,
+        encryption_key=encryption_key,
+        encoding=encoding,
+    )
+    await hub.connect()
+
+    try:
+        devices = await hub.discover_devices()
+    except Exception:  # pragma: no cover - discovery is best effort
+        devices = {"zones": [], "outputs": []}
+ main
 
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = {
         "hub": hub,
