@@ -136,11 +136,10 @@ class SatelHub:
                     _LOGGER.warning(
                         "Connection error while sending '%s': %s", command, err
                     )
-                    await self._close_connection()
                     if attempt == 0:
                         try:
-                            await self.connect()
-                        except Exception as conn_err:
+                            await self._reconnect()
+                        except ConnectionError as conn_err:
                             raise ConnectionError(
                                 "Failed to reconnect to Satel central"
                             ) from conn_err
