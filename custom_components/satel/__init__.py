@@ -15,7 +15,12 @@ from .const import DOMAIN, DEFAULT_HOST, DEFAULT_PORT, CONF_CODE
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS: list[str] = ["sensor", "binary_sensor", "switch"]
+PLATFORMS: list[str] = [
+    "sensor",
+    "binary_sensor",
+    "switch",
+    "alarm_control_panel",
+]
 
 
 class SatelHub:
@@ -143,6 +148,14 @@ class SatelHub:
                 "outputs": [{"id": "1", "name": "Output 1"}],
             }
         return metadata
+
+    async def arm(self) -> None:
+        """Arm the alarm."""
+        await self.send_command("ARM")
+
+    async def disarm(self) -> None:
+        """Disarm the alarm."""
+        await self.send_command("DISARM")
 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
