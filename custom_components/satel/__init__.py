@@ -39,6 +39,14 @@ class SatelHub:
             self._host, self._port
         )
 
+    async def async_close(self) -> None:
+        """Close the connection to the Satel central."""
+        if self._writer is not None:  # pragma: no cover - depends on network
+            self._writer.close()
+            await self._writer.wait_closed()
+            self._writer = None
+        self._reader = None
+
     async def send_command(self, command: str) -> str:
         """Send a command to the Satel central and return response."""
         if self._writer is None or self._reader is None:
@@ -119,7 +127,5 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unload_ok:
         hub: SatelHub = hass.data[DOMAIN].pop(entry.entry_id)
-        if hub._writer is not None:  # pragma: no cover - graceful shutdown
-            hub._writer.close()
-            await hub._writer.wait_closed()
+        await hub.async_close()
     return unload_ok

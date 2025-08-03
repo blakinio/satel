@@ -62,3 +62,19 @@ async def test_discover_devices(monkeypatch):
         "zones": [{"id": "1", "name": "Zone1"}, {"id": "2", "name": "Zone2"}],
         "outputs": [{"id": "1", "name": "Out1"}, {"id": "3", "name": "Out3"}],
     }
+
+
+@pytest.mark.asyncio
+async def test_async_close():
+    hub = SatelHub("1.2.3.4", 1234)
+    writer = MagicMock()
+    writer.wait_closed = AsyncMock()
+    hub._writer = writer
+    hub._reader = AsyncMock()
+
+    await hub.async_close()
+
+    writer.close.assert_called_once()
+    writer.wait_closed.assert_awaited_once()
+    assert hub._writer is None
+    assert hub._reader is None
