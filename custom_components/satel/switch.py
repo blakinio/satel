@@ -68,6 +68,15 @@ class SatelOutputSwitch(SatelEntity, SwitchEntity):
 =======
         try:
             await self._hub.send_command(f"OUTPUT {self._output_id} ON")
+ codex/wrap-send_command-in-try/except-for-connection-errors
+        except ConnectionError as err:
+            _LOGGER.warning("Failed to turn on output %s: %s", self._output_id, err)
+            return
+        self._attr_is_on = True
+        self.async_write_ha_state()
+ zquiz2-codex/update-async_turn_on-and-async_turn_off-methods
+=======
+=======
             self._attr_is_on = True
             self._attr_available = True
             self.async_write_ha_state()
@@ -76,10 +85,21 @@ class SatelOutputSwitch(SatelEntity, SwitchEntity):
                 "Failed to turn on output %s: %s", self._output_id, err
             )
             self._attr_available = False
+ main
+ main
 
     async def async_turn_off(self, **kwargs) -> None:
         try:
             await self._hub.send_command(f"OUTPUT {self._output_id} OFF")
+ codex/wrap-send_command-in-try/except-for-connection-errors
+        except ConnectionError as err:
+            _LOGGER.warning("Failed to turn off output %s: %s", self._output_id, err)
+            return
+        self._attr_is_on = False
+        self.async_write_ha_state()
+ zquiz2-codex/update-async_turn_on-and-async_turn_off-methods
+=======
+=======
             self._attr_is_on = False
             self._attr_available = True
             self.async_write_ha_state()
@@ -89,10 +109,21 @@ class SatelOutputSwitch(SatelEntity, SwitchEntity):
             )
             self._attr_available = False
  main
+ codex/validate-response-after-sending-output-on/off
+=======
+ main
+ main
 
     async def async_update(self) -> None:
         try:
             state = await self._hub.send_command(f"OUTPUT {self._output_id} STATE")
+ codex/wrap-send_command-in-try/except-for-connection-errors
+        except ConnectionError as err:
+            _LOGGER.warning("Failed to update output %s: %s", self._output_id, err)
+            self._attr_is_on = None
+            return
+        self._attr_is_on = state.upper() == "ON"
+=======
             self._attr_is_on = state.upper() == "ON"
             self._attr_available = True
         except ConnectionError as err:
@@ -100,3 +131,4 @@ class SatelOutputSwitch(SatelEntity, SwitchEntity):
                 "Failed to update state for output %s: %s", self._output_id, err
             )
             self._attr_available = False
+ main
