@@ -11,7 +11,13 @@ from homeassistant.const import CONF_HOST, CONF_PORT
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.typing import ConfigType
 
-from .const import DOMAIN, DEFAULT_HOST, DEFAULT_PORT, CONF_CODE
+from .const import (
+    DOMAIN,
+    DEFAULT_HOST,
+    DEFAULT_PORT,
+    CONF_CODE,
+    DEFAULT_TIMEOUT,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -21,10 +27,11 @@ PLATFORMS: list[str] = ["sensor", "binary_sensor", "switch"]
 class SatelHub:
     """Simple Satel client communicating over TCP."""
 
-    def __init__(self, host: str, port: int, code: str) -> None:
+    def __init__(self, host: str, port: int, code: str, timeout: float = DEFAULT_TIMEOUT) -> None:
         self._host = host
         self._port = port
         self._code = code
+        self._timeout = timeout
         self._reader: asyncio.StreamReader | None = None
         self._writer: asyncio.StreamWriter | None = None
 
@@ -41,15 +48,21 @@ class SatelHub:
         )
         await self.send_command(f"LOGIN {self._code}")
 
-    async def send_command(self, command: str) -> str:
+    async def send_command(self, command: str, timeout: float | None = None) -> str:
         """Send a command to the Satel central and return response."""
         if self._writer is None or self._reader is None:
             raise ConnectionError("Not connected to Satel central")
 
+        timeout = timeout if timeout is not None else self._timeout
+
         _LOGGER.debug("Sending command: %s", command)
-        self._writer.write((command + "\n").encode())
-        await self._writer.drain()
-        data = await self._reader.readline()
+        try:
+            self._writer.write((command + "\n").encode())
+            await asyncio.wait_for(self._writer.drain(), timeout)
+            data = await asyncio.wait_for(self._reader.readline(), timeout)
+        except asyncio.TimeoutError as err:
+            _LOGGER.error("Timeout while sending command: %s", command)
+            raise err
         return data.decode().strip()
 
     async def get_status(self) -> dict[str, Any]:
