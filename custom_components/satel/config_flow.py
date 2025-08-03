@@ -23,9 +23,13 @@ class SatelConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             self._host = user_input[CONF_HOST]
             self._port = user_input[CONF_PORT]
             hub = SatelHub(self._host, self._port)
-            await hub.connect()
-            self._devices = await hub.discover_devices()
-            return await self.async_step_select()
+            try:
+                await hub.connect()
+                self._devices = await hub.discover_devices()
+            except (OSError, ConnectionError):
+                errors["base"] = "cannot_connect"
+            else:
+                return await self.async_step_select()
 
         data_schema = vol.Schema(
             {

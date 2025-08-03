@@ -7,7 +7,9 @@ from homeassistant.const import CONF_HOST, CONF_PORT
 from custom_components.satel.const import DOMAIN
 
 
-@pytest.mark.asyncio
+pytestmark = [pytest.mark.asyncio, pytest.mark.usefixtures("enable_custom_integrations")]
+
+
 async def test_config_flow_full(hass):
     devices = {
         "zones": [{"id": "1", "name": "Zone"}],
@@ -45,3 +47,26 @@ async def test_config_flow_full(hass):
 
         hub.connect.assert_awaited_once()
         hub.discover_devices.assert_awaited_once()
+
+
+async def test_config_flow_cannot_connect(hass):
+    """Test we handle connection errors."""
+    with patch("custom_components.satel.config_flow.SatelHub") as hub_cls:
+        hub = hub_cls.return_value
+        hub.connect = AsyncMock(side_effect=OSError)
+        hub.discover_devices = AsyncMock()
+
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN, context={"source": "user"}
+        )
+        assert result["type"] == data_entry_flow.FlowResultType.FORM
+        assert result["step_id"] == "user"
+
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {CONF_HOST: "1.2.3.4", CONF_PORT: 1234}
+        )
+
+        assert result["type"] == data_entry_flow.FlowResultType.FORM
+        assert result["errors"] == {"base": "cannot_connect"}
+        hub.connect.assert_awaited_once()
+        hub.discover_devices.assert_not_awaited()
