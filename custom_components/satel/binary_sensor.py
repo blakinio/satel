@@ -2,13 +2,18 @@
 
 from __future__ import annotations
 
+import logging
+
 from homeassistant.components.binary_sensor import BinarySensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.device_registry import DeviceInfo
 
 from . import SatelHub
 from .const import DOMAIN
 from .entity import SatelEntity
+
+_LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(
@@ -33,6 +38,30 @@ class SatelZoneBinarySensor(SatelEntity, BinarySensorEntity):
         self._attr_name = name
         self._attr_unique_id = f"satel_zone_{zone_id}"
 
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Return device information for this entity."""
+        return DeviceInfo(
+            identifiers={(DOMAIN, self._hub.host)},
+            manufacturer="Satel",
+            name="Satel Alarm",
+        )
+
     async def async_update(self) -> None:
-        status = await self._hub.send_command(f"ZONE {self._zone_id}")
+        try:
+            status = await self._hub.send_command(f"ZONE {self._zone_id}")
+ codex/wrap-send_command-in-try/except-for-connection-errors
+        except ConnectionError as err:
+            _LOGGER.warning("Failed to update zone %s: %s", self._zone_id, err)
+            self._attr_is_on = None
+            return
         self._attr_is_on = status.upper() == "ON"
+=======
+            self._attr_is_on = status.upper() == "ON"
+            self._attr_available = True
+        except ConnectionError as err:
+            _LOGGER.warning(
+                "Could not update zone %s status: %s", self._zone_id, err
+            )
+            self._attr_available = False
+ main
