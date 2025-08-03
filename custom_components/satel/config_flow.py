@@ -18,7 +18,18 @@ from .const import (
 )
 =======
 from . import SatelHub
+ codex/extend-config_flow.py-for-credential-handling
 from .const import DOMAIN, DEFAULT_PORT, DEFAULT_HOST, CONF_CODE
+ main
+=======
+from .const import (
+    DOMAIN,
+    DEFAULT_PORT,
+    DEFAULT_HOST,
+    CONF_CODE,
+    CONF_ENCODING,
+    DEFAULT_ENCODING,
+)
  main
 
 
@@ -32,11 +43,40 @@ class SatelConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             self._host = user_input[CONF_HOST]
             self._port = user_input[CONF_PORT]
+ codex/handle-network-errors-in-config_flow
+            hub = SatelHub(self._host, self._port)
+            try:
+                await hub.connect()
+                self._devices = await hub.discover_devices()
+codex/add-error-handling-in-async_step_user
+            except Exception:  # pylint: disable=broad-except
+                errors["base"] = "cannot_connect"
+            else:
+                return await self.async_step_select()
+=======
+            except (OSError, ConnectionError):
+                errors["base"] = "cannot_connect"
+            else:
+                return await self.async_step_select()
+=======
             self._code = user_input[CONF_CODE]
+ codex/handle-connection-errors-in-config-flow
             hub = SatelHub(self._host, self._port, self._code)
+            try:
+                await hub.connect()
+                self._devices = await hub.discover_devices()
+            except ConnectionError:
+                errors["base"] = "cannot_connect"
+            else:
+                return await self.async_step_select()
+=======
+            self._encoding = user_input.get(CONF_ENCODING, DEFAULT_ENCODING)
+            hub = SatelHub(self._host, self._port, self._code, self._encoding)
             await hub.connect()
             self._devices = await hub.discover_devices()
             return await self.async_step_select()
+main main
+main
 
         data_schema = vol.Schema(
             {
@@ -47,6 +87,10 @@ class SatelConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 vol.Optional(CONF_ENCRYPTION_KEY): str,
 =======
                 vol.Required(CONF_CODE): str,
+ codex/extend-config_flow.py-for-credential-handling
+ main
+=======
+                vol.Optional(CONF_ENCODING, default=DEFAULT_ENCODING): str,
  main
             }
         )
@@ -60,6 +104,7 @@ class SatelConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     CONF_HOST: self._host,
                     CONF_PORT: self._port,
                     CONF_CODE: self._code,
+                    CONF_ENCODING: self._encoding,
                     "zones": user_input.get("zones", []),
                     "outputs": user_input.get("outputs", []),
                 },
