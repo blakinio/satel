@@ -4,19 +4,9 @@ from __future__ import annotations
 
 import logging
 
-try:
-    from homeassistant.components.sensor import SensorEntity
-    from homeassistant.config_entries import ConfigEntry
-    from homeassistant.core import HomeAssistant
-except ModuleNotFoundError:  # pragma: no cover - simple stubs
-    class SensorEntity:  # type: ignore
-        pass
-
-    class ConfigEntry:  # type: ignore
-        pass
-
-    class HomeAssistant:  # type: ignore
-        pass
+from homeassistant.components.sensor import SensorEntity
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
 
 from . import SatelHub
 from .const import DOMAIN
