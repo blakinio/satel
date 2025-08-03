@@ -67,6 +67,25 @@ class SatelHub:
         metadata: dict[str, list[dict[str, Any]]] = {"zones": [], "outputs": []}
         try:
             response = await self.send_command("LIST")
+        except ConnectionError as err:
+            _LOGGER.warning("LIST command failed (%s). Attempting reconnection", err)
+            try:
+                await self.connect()
+                response = await self.send_command("LIST")
+            except Exception as err:
+                _LOGGER.error("Device discovery failed after reconnection: %s", err)
+                return {
+                    "zones": [{"id": "1", "name": "Zone 1"}],
+                    "outputs": [{"id": "1", "name": "Output 1"}],
+                }
+        except Exception as err:  # pragma: no cover - demonstration only
+            _LOGGER.error("Device discovery failed: %s", err)
+            return {
+                "zones": [{"id": "1", "name": "Zone 1"}],
+                "outputs": [{"id": "1", "name": "Output 1"}],
+            }
+
+        try:
             zones_part, outputs_part = response.split("|")
             for item in zones_part.split(","):
                 if not item:

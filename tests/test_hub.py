@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -65,3 +66,43 @@ async def test_discover_devices(monkeypatch):
         "zones": [{"id": "1", "name": "Zone1"}, {"id": "2", "name": "Zone2"}],
         "outputs": [{"id": "1", "name": "Out1"}, {"id": "3", "name": "Out3"}],
     }
+
+
+@pytest.mark.asyncio
+async def test_discover_devices_reconnect(monkeypatch):
+    hub = SatelHub("1.2.3.4", 1234, "abcd")
+    connect_mock = AsyncMock()
+    monkeypatch.setattr(hub, "connect", connect_mock)
+    send_mock = AsyncMock(
+        side_effect=[ConnectionError, "1=Zone1|1=Out1"]
+    )
+    monkeypatch.setattr(hub, "send_command", send_mock)
+
+    devices = await hub.discover_devices()
+
+    assert send_mock.await_count == 2
+    connect_mock.assert_awaited_once()
+    assert devices == {
+        "zones": [{"id": "1", "name": "Zone1"}],
+        "outputs": [{"id": "1", "name": "Out1"}],
+    }
+
+
+@pytest.mark.asyncio
+async def test_discover_devices_reconnect_failure(monkeypatch, caplog):
+    hub = SatelHub("1.2.3.4", 1234, "abcd")
+    connect_mock = AsyncMock()
+    monkeypatch.setattr(hub, "connect", connect_mock)
+    send_mock = AsyncMock(side_effect=[ConnectionError("boom"), ConnectionError("boom")])
+    monkeypatch.setattr(hub, "send_command", send_mock)
+
+    with caplog.at_level(logging.ERROR):
+        devices = await hub.discover_devices()
+
+    assert send_mock.await_count == 2
+    connect_mock.assert_awaited_once()
+    assert devices == {
+        "zones": [{"id": "1", "name": "Zone 1"}],
+        "outputs": [{"id": "1", "name": "Output 1"}],
+    }
+    assert "Device discovery failed after reconnection" in caplog.text
