@@ -29,3 +29,9 @@ def ulid_to_bytes(u):
 
 def bytes_to_ulid(b):
     return "0" * 26
+
+def bytes_to_ulid_or_none(b):
+    return None
+
+def ulid_to_bytes_or_none(u):
+    return None
