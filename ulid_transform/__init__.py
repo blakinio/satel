@@ -30,6 +30,13 @@ def ulid_to_bytes(u):
 def bytes_to_ulid(b):
     return "0" * 26
 
+ codex/handle-connection-errors-in-config-flow
+def bytes_to_ulid_or_none(b):
+    return bytes_to_ulid(b) if b else None
+
+def ulid_to_bytes_or_none(u):
+    return ulid_to_bytes(u) if u else None
+=======
  codex/wrap-send_command-in-try/except-for-connection-errors
 def bytes_to_ulid_or_none(b):
     return "0" * 26 if b else None
@@ -57,5 +64,6 @@ def ulid_to_bytes_or_none(u):
         return ulid_to_bytes(u)
     except Exception:
         return None
+ main
  main
  main

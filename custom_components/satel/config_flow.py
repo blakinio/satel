@@ -30,11 +30,22 @@ class SatelConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             self._host = user_input[CONF_HOST]
             self._port = user_input[CONF_PORT]
             self._code = user_input[CONF_CODE]
+ codex/handle-connection-errors-in-config-flow
+            hub = SatelHub(self._host, self._port, self._code)
+            try:
+                await hub.connect()
+                self._devices = await hub.discover_devices()
+            except ConnectionError:
+                errors["base"] = "cannot_connect"
+            else:
+                return await self.async_step_select()
+=======
             self._encoding = user_input.get(CONF_ENCODING, DEFAULT_ENCODING)
             hub = SatelHub(self._host, self._port, self._code, self._encoding)
             await hub.connect()
             self._devices = await hub.discover_devices()
             return await self.async_step_select()
+main
 
         data_schema = vol.Schema(
             {
