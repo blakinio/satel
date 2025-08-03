@@ -5,7 +5,6 @@ from __future__ import annotations
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity import Entity
 
 from . import SatelHub
 from .const import DOMAIN
@@ -14,20 +13,26 @@ from .const import DOMAIN
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities
 ) -> None:
-    hub: SatelHub = hass.data[DOMAIN][entry.entry_id]
-    async_add_entities([SatelStatusSensor(hub)], True)
+    data = hass.data[DOMAIN][entry.entry_id]
+    hub: SatelHub = data["hub"]
+    devices = data["devices"]
+    entities = [
+        SatelZoneSensor(hub, zone["id"], zone["name"])
+        for zone in devices.get("zones", [])
+    ]
+    async_add_entities(entities, True)
 
 
-class SatelStatusSensor(SensorEntity):
-    """Representation of Satel status sensor."""
+class SatelZoneSensor(SensorEntity):
+    """Representation of Satel zone status sensor."""
 
-    _attr_name = "Satel Status"
-
-    def __init__(self, hub: SatelHub) -> None:
+    def __init__(self, hub: SatelHub, zone_id: str, name: str) -> None:
         self._hub = hub
-        self._attr_native_unit_of_measurement = None
-        self._attr_unique_id = "satel_status"
+        self._zone_id = zone_id
+        self._attr_name = f"{name} status"
+        self._attr_unique_id = f"satel_zone_status_{zone_id}"
 
     async def async_update(self) -> None:
-        data = await self._hub.get_status()
-        self._attr_native_value = data.get("raw")
+        self._attr_native_value = await self._hub.send_command(
+            f"ZONE {self._zone_id} STATUS"
+        )

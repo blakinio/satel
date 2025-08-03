@@ -13,19 +13,25 @@ from .const import DOMAIN
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities
 ) -> None:
-    hub: SatelHub = hass.data[DOMAIN][entry.entry_id]
-    async_add_entities([SatelAlarmBinarySensor(hub)], True)
+    data = hass.data[DOMAIN][entry.entry_id]
+    hub: SatelHub = data["hub"]
+    devices = data["devices"]
+    entities = [
+        SatelZoneBinarySensor(hub, zone["id"], zone["name"])
+        for zone in devices.get("zones", [])
+    ]
+    async_add_entities(entities, True)
 
 
-class SatelAlarmBinarySensor(BinarySensorEntity):
-    """Binary sensor indicating alarm state."""
+class SatelZoneBinarySensor(BinarySensorEntity):
+    """Binary sensor for a Satel zone."""
 
-    _attr_name = "Satel Alarm"
-
-    def __init__(self, hub: SatelHub) -> None:
+    def __init__(self, hub: SatelHub, zone_id: str, name: str) -> None:
         self._hub = hub
-        self._attr_unique_id = "satel_alarm"
+        self._zone_id = zone_id
+        self._attr_name = name
+        self._attr_unique_id = f"satel_zone_{zone_id}"
 
     async def async_update(self) -> None:
-        data = await self._hub.get_status()
-        self._attr_is_on = data.get("raw") == "ALARM"
+        status = await self._hub.send_command(f"ZONE {self._zone_id}")
+        self._attr_is_on = status.upper() == "ON"
