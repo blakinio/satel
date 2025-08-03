@@ -27,6 +27,11 @@ class SatelHub:
         self._reader: asyncio.StreamReader | None = None
         self._writer: asyncio.StreamWriter | None = None
 
+    @property
+    def host(self) -> str:
+        """Return the host address of the Satel hub."""
+        return self._host
+
     async def connect(self) -> None:
         """Connect to the Satel central."""
         _LOGGER.debug("Connecting to %s:%s", self._host, self._port)
