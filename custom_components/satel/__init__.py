@@ -55,6 +55,30 @@ class SatelHub:
             _LOGGER.error("Failed to get status: %s", err)
             return {"raw": "unknown"}
 
+    async def discover_devices(self) -> dict[str, list[dict[str, Any]]]:
+        """Discover zones and outputs available on the panel."""
+        metadata: dict[str, list[dict[str, Any]]] = {"zones": [], "outputs": []}
+        try:
+            response = await self.send_command("LIST")
+            zones_part, outputs_part = response.split("|")
+            for item in zones_part.split(","):
+                if not item:
+                    continue
+                zone_id, name = item.split("=", 1)
+                metadata["zones"].append({"id": zone_id, "name": name})
+            for item in outputs_part.split(","):
+                if not item:
+                    continue
+                out_id, name = item.split("=", 1)
+                metadata["outputs"].append({"id": out_id, "name": name})
+        except Exception as err:  # pragma: no cover - demonstration only
+            _LOGGER.error("Device discovery failed: %s", err)
+            metadata = {
+                "zones": [{"id": "1", "name": "Zone 1"}],
+                "outputs": [{"id": "1", "name": "Output 1"}],
+            }
+        return metadata
+
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Set up Satel integration from YAML."""
@@ -68,8 +92,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     hub = SatelHub(host, port)
     await hub.connect()
+    devices = await hub.discover_devices()
+    selected_zones = entry.data.get("zones")
+    selected_outputs = entry.data.get("outputs")
+    if selected_zones is not None:
+        devices["zones"] = [z for z in devices["zones"] if z["id"] in selected_zones]
+    if selected_outputs is not None:
+        devices["outputs"] = [o for o in devices["outputs"] if o["id"] in selected_outputs]
 
-    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = hub
+    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = {
+        "hub": hub,
+        "devices": devices,
+    }
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True

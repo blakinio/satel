@@ -13,28 +13,34 @@ from .const import DOMAIN
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities
 ) -> None:
-    hub: SatelHub = hass.data[DOMAIN][entry.entry_id]
-    async_add_entities([SatelOutputSwitch(hub)], True)
+    data = hass.data[DOMAIN][entry.entry_id]
+    hub: SatelHub = data["hub"]
+    devices = data["devices"]
+    entities = [
+        SatelOutputSwitch(hub, output["id"], output["name"])
+        for output in devices.get("outputs", [])
+    ]
+    async_add_entities(entities, True)
 
 
 class SatelOutputSwitch(SwitchEntity):
     """Switch to control Satel output."""
 
-    _attr_name = "Satel Output"
-
-    def __init__(self, hub: SatelHub) -> None:
+    def __init__(self, hub: SatelHub, output_id: str, name: str) -> None:
         self._hub = hub
+        self._output_id = output_id
+        self._attr_name = name
         self._attr_is_on = False
-        self._attr_unique_id = "satel_output"
+        self._attr_unique_id = f"satel_output_{output_id}"
 
     async def async_turn_on(self, **kwargs) -> None:
-        await self._hub.send_command("OUTPUT ON")
+        await self._hub.send_command(f"OUTPUT {self._output_id} ON")
         self._attr_is_on = True
 
     async def async_turn_off(self, **kwargs) -> None:
-        await self._hub.send_command("OUTPUT OFF")
+        await self._hub.send_command(f"OUTPUT {self._output_id} OFF")
         self._attr_is_on = False
 
     async def async_update(self) -> None:
-        # In real implementation, query hub for output state
-        pass
+        state = await self._hub.send_command(f"OUTPUT {self._output_id} STATE")
+        self._attr_is_on = state.upper() == "ON"
