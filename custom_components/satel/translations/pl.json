@@ -1,4 +1,9 @@
 {
+codex/add-error-handling-in-async_step_user
+  "config": {
+    "error": {
+      "cannot_connect": "Nie można połączyć się z centralą Satel."
+=======
   "title": "Alarm Satel",
   "config": {
     "step": {
@@ -22,6 +27,7 @@
     "error": {
       "cannot_connect": "Nie udało się połączyć",
       "unknown": "Nieoczekiwany błąd"
+ main
     }
   }
 }

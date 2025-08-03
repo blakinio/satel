@@ -34,6 +34,12 @@ class SatelConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             try:
                 await hub.connect()
                 self._devices = await hub.discover_devices()
+codex/add-error-handling-in-async_step_user
+            except Exception:  # pylint: disable=broad-except
+                errors["base"] = "cannot_connect"
+            else:
+                return await self.async_step_select()
+=======
             except (OSError, ConnectionError):
                 errors["base"] = "cannot_connect"
             else:
@@ -56,6 +62,7 @@ class SatelConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             self._devices = await hub.discover_devices()
             return await self.async_step_select()
 main main
+main
 
         data_schema = vol.Schema(
             {
