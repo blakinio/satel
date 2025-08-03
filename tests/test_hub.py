@@ -69,6 +69,26 @@ async def test_discover_devices(monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_discover_devices_invalid_entries(monkeypatch, caplog):
+    hub = SatelHub("1.2.3.4", 1234, "abcd")
+    monkeypatch.setattr(
+        hub,
+        "send_command",
+        AsyncMock(return_value="1=Zone1,invalid,2=Zone2|1=Out1,broken,3=Out3"),
+    )
+
+    with caplog.at_level(logging.WARNING):
+        devices = await hub.discover_devices()
+
+    assert devices == {
+        "zones": [{"id": "1", "name": "Zone1"}, {"id": "2", "name": "Zone2"}],
+        "outputs": [{"id": "1", "name": "Out1"}, {"id": "3", "name": "Out3"}],
+    }
+    assert "Invalid zone entry" in caplog.text
+    assert "Invalid output entry" in caplog.text
+
+
+@pytest.mark.asyncio
 async def test_discover_devices_reconnect(monkeypatch):
     hub = SatelHub("1.2.3.4", 1234, "abcd")
     connect_mock = AsyncMock()

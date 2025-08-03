@@ -90,10 +90,16 @@ class SatelHub:
             for item in zones_part.split(","):
                 if not item:
                     continue
+                if "=" not in item:
+                    _LOGGER.warning("Invalid zone entry: %s", item)
+                    continue
                 zone_id, name = item.split("=", 1)
                 metadata["zones"].append({"id": zone_id, "name": name})
             for item in outputs_part.split(","):
                 if not item:
+                    continue
+                if "=" not in item:
+                    _LOGGER.warning("Invalid output entry: %s", item)
                     continue
                 out_id, name = item.split("=", 1)
                 metadata["outputs"].append({"id": out_id, "name": name})
