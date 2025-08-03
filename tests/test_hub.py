@@ -120,6 +120,10 @@ main
 from custom_components.satel import SatelHub
 main
 
+HOST = "1.2.3.4"
+PORT = 1234
+CODE = "abcd"
+
 
  codex/add-unit-tests-for-satelhub-integration
 class DummyWriter:
@@ -182,11 +186,11 @@ async def test_connect(monkeypatch):
     send_mock = AsyncMock()
     monkeypatch.setattr(SatelHub, "send_command", send_mock)
 
-    hub = SatelHub("1.2.3.4", 1234, "abcd")
+    hub = SatelHub(HOST, PORT, CODE)
     await hub.connect()
 
-    open_mock.assert_awaited_once_with("1.2.3.4", 1234)
-    send_mock.assert_awaited_once_with("LOGIN abcd")
+    open_mock.assert_awaited_once_with(HOST, PORT)
+    send_mock.assert_awaited_once_with(f"LOGIN {CODE}")
     assert hub._reader is reader
     assert hub._writer is writer
 
@@ -207,7 +211,7 @@ async def test_connect_error(monkeypatch, caplog):
 
 @pytest.mark.asyncio
 async def test_send_command(monkeypatch):
-    hub = SatelHub("1.2.3.4", 1234, "abcd")
+    hub = SatelHub(HOST, PORT, CODE)
     reader = AsyncMock()
     reader.readline = AsyncMock(return_value=b"OK\n")
     writer = MagicMock()
@@ -287,7 +291,7 @@ async def test_send_command_timeout(caplog):
 
 @pytest.mark.asyncio
 async def test_send_command_not_connected():
-    hub = SatelHub("1.2.3.4", 1234, "abcd")
+    hub = SatelHub(HOST, PORT, CODE)
     with pytest.raises(ConnectionError):
         await hub.send_command("TEST")
 
@@ -305,7 +309,7 @@ async def test_send_command_reconnect(monkeypatch):
     writer1.wait_closed = AsyncMock()
 =======
 async def test_send_command_reconnect_success(monkeypatch):
-    hub = SatelHub("1.2.3.4", 1234, "abcd")
+    hub = SatelHub(HOST, PORT, CODE)
     reader1 = AsyncMock()
     writer1 = MagicMock()
     writer1.drain = AsyncMock()
@@ -359,7 +363,7 @@ async def test_send_command_reconnect_success(monkeypatch):
  codex/wrap-send_command-in-try/except-block
 =======
 async def test_send_command_reconnect_failure(monkeypatch):
-    hub = SatelHub("1.2.3.4", 1234, "abcd")
+    hub = SatelHub(HOST, PORT, CODE)
     reader1 = AsyncMock()
     writer1 = MagicMock()
     writer1.drain = AsyncMock()
@@ -379,7 +383,7 @@ async def test_send_command_reconnect_failure(monkeypatch):
 @pytest.mark.asyncio
  main
 async def test_discover_devices(monkeypatch):
-    hub = SatelHub("1.2.3.4", 1234, "abcd")
+    hub = SatelHub(HOST, PORT, CODE)
     monkeypatch.setattr(
         hub,
         "send_command",
@@ -467,7 +471,7 @@ async def test_send_command_serialization():
 =======
  HEAD
 async def test_discover_devices_invalid_entries(monkeypatch, caplog):
-    hub = SatelHub("1.2.3.4", 1234, "abcd")
+    hub = SatelHub(HOST, PORT, CODE)
     monkeypatch.setattr(
         hub,
         "send_command",
@@ -502,7 +506,7 @@ async def test_discover_devices_missing_delimiter(monkeypatch, caplog, response)
 
 @pytest.mark.asyncio
 async def test_discover_devices_reconnect(monkeypatch):
-    hub = SatelHub("1.2.3.4", 1234, "abcd")
+    hub = SatelHub(HOST, PORT, CODE)
     connect_mock = AsyncMock()
     monkeypatch.setattr(hub, "connect", connect_mock)
     send_mock = AsyncMock(
@@ -522,7 +526,7 @@ async def test_discover_devices_reconnect(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_discover_devices_reconnect_failure(monkeypatch, caplog):
-    hub = SatelHub("1.2.3.4", 1234, "abcd")
+    hub = SatelHub(HOST, PORT, CODE)
     connect_mock = AsyncMock()
     monkeypatch.setattr(hub, "connect", connect_mock)
     send_mock = AsyncMock(side_effect=[ConnectionError("boom"), ConnectionError("boom")])
