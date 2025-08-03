@@ -8,37 +8,17 @@ from homeassistant.const import CONF_HOST, CONF_PORT
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers import config_validation as cv
 
- codex/extend-config_flow.py-for-credential-handling
-from .const import (
-    DOMAIN,
-    DEFAULT_PORT,
-    DEFAULT_HOST,
-    CONF_ENCRYPTION_KEY,
-    CONF_USER_CODE,
-)
-=======
 from . import SatelHub
-codex/add-translations-for-custom-components
- codex/add-translations-for-custom-components
-from .const import DEFAULT_HOST, DEFAULT_PORT, DOMAIN
-=======
-from .const import DOMAIN, DEFAULT_PORT, DEFAULT_HOST, CONF_CODE
- main
-=======
- codex/extend-config_flow.py-for-credential-handling
-from .const import DOMAIN, DEFAULT_PORT, DEFAULT_HOST, CONF_CODE
- main
-=======
 from .const import (
     DOMAIN,
-    DEFAULT_PORT,
     DEFAULT_HOST,
+    DEFAULT_PORT,
     CONF_CODE,
+    CONF_USER_CODE,
+    CONF_ENCRYPTION_KEY,
     CONF_ENCODING,
     DEFAULT_ENCODING,
 )
- main
- main
 
 
 class SatelConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -46,80 +26,39 @@ class SatelConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     VERSION = 1
 
-    async def async_step_user(self, user_input=None) -> FlowResult:
-        errors = {}
+    async def async_step_user(self, user_input: dict | None = None) -> FlowResult:
+        """Handle the initial step of the flow."""
+        errors: dict[str, str] = {}
+
         if user_input is not None:
- codex/add-translations-for-custom-components
-            hub = SatelHub(user_input[CONF_HOST], user_input[CONF_PORT])
-            try:
-                await hub.connect()
-            except Exception:
-                errors["base"] = "cannot_connect"
-            else:
-                return self.async_create_entry(
-                    title=f"Satel {user_input[CONF_HOST]}", data=user_input
-                )
-=======
             self._host = user_input[CONF_HOST]
             self._port = user_input[CONF_PORT]
- codex/handle-network-errors-in-config_flow
-            hub = SatelHub(self._host, self._port)
-            try:
-                await hub.connect()
-                self._devices = await hub.discover_devices()
-codex/add-error-handling-in-async_step_user
-            except Exception:  # pylint: disable=broad-except
-                errors["base"] = "cannot_connect"
-            else:
-                return await self.async_step_select()
-=======
-            except (OSError, ConnectionError):
-                errors["base"] = "cannot_connect"
-            else:
-                return await self.async_step_select()
-=======
             self._code = user_input[CONF_CODE]
- codex/handle-connection-errors-in-config-flow
-            hub = SatelHub(self._host, self._port, self._code)
+            self._encoding = user_input.get(CONF_ENCODING, DEFAULT_ENCODING)
+
+            hub = SatelHub(self._host, self._port, self._code, self._encoding)
             try:
                 await hub.connect()
                 self._devices = await hub.discover_devices()
-            except ConnectionError:
+            except (ConnectionError, OSError):
                 errors["base"] = "cannot_connect"
             else:
                 return await self.async_step_select()
-=======
-            self._encoding = user_input.get(CONF_ENCODING, DEFAULT_ENCODING)
-            hub = SatelHub(self._host, self._port, self._code, self._encoding)
-            await hub.connect()
-            self._devices = await hub.discover_devices()
-            return await self.async_step_select()
-codex/add-translations-for-custom-components
- main
-=======
-main main
-main
- main
 
         data_schema = vol.Schema(
             {
                 vol.Required(CONF_HOST, default=DEFAULT_HOST): str,
                 vol.Required(CONF_PORT, default=DEFAULT_PORT): int,
- codex/extend-config_flow.py-for-credential-handling
-                vol.Optional(CONF_USER_CODE): str,
-                vol.Optional(CONF_ENCRYPTION_KEY): str,
-=======
                 vol.Required(CONF_CODE): str,
- codex/extend-config_flow.py-for-credential-handling
- main
-=======
                 vol.Optional(CONF_ENCODING, default=DEFAULT_ENCODING): str,
- main
             }
         )
-        return self.async_show_form(step_id="user", data_schema=data_schema, errors=errors)
+        return self.async_show_form(
+            step_id="user", data_schema=data_schema, errors=errors
+        )
 
-    async def async_step_select(self, user_input=None) -> FlowResult:
+    async def async_step_select(self, user_input: dict | None = None) -> FlowResult:
+        """Handle zone and output selection."""
         if user_input is not None:
             return self.async_create_entry(
                 title=f"Satel {self._host}",
@@ -135,10 +74,15 @@ main
 
         zone_options = {z["id"]: z["name"] for z in self._devices.get("zones", [])}
         output_options = {o["id"]: o["name"] for o in self._devices.get("outputs", [])}
+
         data_schema = vol.Schema(
             {
-                vol.Optional("zones", default=list(zone_options)): cv.multi_select(zone_options),
-                vol.Optional("outputs", default=list(output_options)): cv.multi_select(output_options),
+                vol.Optional("zones", default=list(zone_options)): cv.multi_select(
+                    zone_options
+                ),
+                vol.Optional("outputs", default=list(output_options)): cv.multi_select(
+                    output_options
+                ),
             }
         )
         return self.async_show_form(step_id="select", data_schema=data_schema)
