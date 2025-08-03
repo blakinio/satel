@@ -2,6 +2,11 @@
   "domain": "satel",
   "name": "Satel Alarm",
   "version": "0.1.0",
+codex/update-codeowners-in-manifest.json
+  "documentation": "https://github.com/blakinio/satel",
+  "requirements": [],
+  "codeowners": ["@blakinio"],
+=======
  codex/add-readme.md-with-documentation-details
   "documentation": "https://github.com/yourname/satel/blob/main/README.md",
   "requirements": [],
@@ -10,6 +15,7 @@
   "documentation": "https://www.home-assistant.io/integrations/satel",
   "requirements": ["pysatel==0.0.1"],
   "codeowners": ["@openai"],
+ main
  main
   "config_flow": true,
   "iot_class": "local_polling",
