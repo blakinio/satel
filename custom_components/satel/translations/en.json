@@ -1,45 +1,14 @@
 {
- codex/add-error-handling-in-async_step_user
-  "config": {
-    "error": {
-      "cannot_connect": "Unable to connect to the Satel hub."
-=======
   "title": "Satel Alarm",
   "config": {
     "step": {
       "user": {
- codex/add-translations-for-custom-components
-=======
         "title": "Connect to Satel",
         "description": "Set up connection to your Satel alarm panel.",
- main
         "data": {
           "host": "Host",
           "port": "Port"
         }
- codex/add-translations-for-custom-components
-      }
-    },
-    "error": {
-      "cannot_connect": "Failed to connect"
-    }
-  },
-  "entity": {
-    "binary_sensor": {
-      "alarm": {
-        "name": "Satel Alarm"
-      }
-    },
-    "sensor": {
-      "status": {
-        "name": "Satel Status"
-      }
-    },
-    "switch": {
-      "output": {
-        "name": "Satel Output"
-      }
-=======
       },
       "select": {
         "title": "Select devices",
@@ -53,7 +22,24 @@
     "error": {
       "cannot_connect": "Failed to connect",
       "unknown": "Unexpected error"
- main
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "zone": {
+        "name": "Zone"
+      }
+    },
+    "sensor": {
+      "zone_status": {
+        "name": "Zone status"
+      }
+    },
+    "switch": {
+      "output": {
+        "name": "Output"
+      }
     }
   }
 }
+
