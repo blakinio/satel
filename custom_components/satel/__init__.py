@@ -280,6 +280,13 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unload_ok:
+ codex/update-async_unload_entry-to-extract-hub
+        entry_data = hass.data[DOMAIN].pop(entry.entry_id, {})
+        hub: SatelHub = entry_data["hub"]
+        if writer := hub._writer:  # pragma: no cover - graceful shutdown
+            writer.close()
+            await writer.wait_closed()
+=======
         data = hass.data[DOMAIN].pop(entry.entry_id)
         hub: SatelHub = data["hub"]
         # devices metadata removed from hass.data with the pop above
@@ -288,4 +295,5 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             await hub._writer.wait_closed()
         hub._writer = None
         hub._reader = None
+ main
     return unload_ok
