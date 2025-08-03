@@ -8,7 +8,7 @@ from custom_components.satel.const import DOMAIN
 
 
 @pytest.mark.asyncio
-async def test_config_flow_full(hass):
+async def test_config_flow_full(hass, enable_custom_integrations):
     devices = {
         "zones": [{"id": "1", "name": "Zone"}],
         "outputs": [{"id": "2", "name": "Out"}],
