@@ -9,7 +9,14 @@ from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers import config_validation as cv
 
 from . import SatelHub
-from .const import DOMAIN, DEFAULT_PORT, DEFAULT_HOST, CONF_CODE
+from .const import (
+    DOMAIN,
+    DEFAULT_PORT,
+    DEFAULT_HOST,
+    CONF_CODE,
+    CONF_ENCODING,
+    DEFAULT_ENCODING,
+)
 
 
 class SatelConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -23,16 +30,29 @@ class SatelConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             self._host = user_input[CONF_HOST]
             self._port = user_input[CONF_PORT]
             self._code = user_input[CONF_CODE]
+ codex/handle-connection-errors-in-config-flow
             hub = SatelHub(self._host, self._port, self._code)
+            try:
+                await hub.connect()
+                self._devices = await hub.discover_devices()
+            except ConnectionError:
+                errors["base"] = "cannot_connect"
+            else:
+                return await self.async_step_select()
+=======
+            self._encoding = user_input.get(CONF_ENCODING, DEFAULT_ENCODING)
+            hub = SatelHub(self._host, self._port, self._code, self._encoding)
             await hub.connect()
             self._devices = await hub.discover_devices()
             return await self.async_step_select()
+main
 
         data_schema = vol.Schema(
             {
                 vol.Required(CONF_HOST, default=DEFAULT_HOST): str,
                 vol.Required(CONF_PORT, default=DEFAULT_PORT): int,
                 vol.Required(CONF_CODE): str,
+                vol.Optional(CONF_ENCODING, default=DEFAULT_ENCODING): str,
             }
         )
         return self.async_show_form(step_id="user", data_schema=data_schema, errors=errors)
@@ -45,6 +65,7 @@ class SatelConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     CONF_HOST: self._host,
                     CONF_PORT: self._port,
                     CONF_CODE: self._code,
+                    CONF_ENCODING: self._encoding,
                     "zones": user_input.get("zones", []),
                     "outputs": user_input.get("outputs", []),
                 },
