@@ -14,6 +14,8 @@ from .const import (
     DEFAULT_HOST,
     DEFAULT_PORT,
     CONF_CODE,
+    CONF_USER_CODE,
+    CONF_ENCRYPTION_KEY,
     CONF_ENCODING,
     DEFAULT_ENCODING,
 )

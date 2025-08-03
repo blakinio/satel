@@ -17,31 +17,17 @@ except ModuleNotFoundError:  # pragma: no cover - simple stubs
     CONF_PORT = "port"
     ConfigType = dict[str, Any]
 
- codex/extend-config_flow.py-for-credential-handling
- codex/extend-config_flow.py-for-credential-handling
-=======
- main
 from .const import (
     DOMAIN,
     DEFAULT_HOST,
     DEFAULT_PORT,
- codex/extend-config_flow.py-for-credential-handling
-    CONF_ENCRYPTION_KEY,
-    CONF_USER_CODE,
-)
-=======
-from .const import DOMAIN, DEFAULT_HOST, DEFAULT_PORT, CONF_CODE
- main
-=======
     CONF_CODE,
-codex/add-configurable-timeout-to-send_command
-    DEFAULT_TIMEOUT,
-=======
+    CONF_USER_CODE,
+    CONF_ENCRYPTION_KEY,
     CONF_ENCODING,
     DEFAULT_ENCODING,
- main
+    DEFAULT_TIMEOUT,
 )
- main
 
 _LOGGER = logging.getLogger(__name__)
 
