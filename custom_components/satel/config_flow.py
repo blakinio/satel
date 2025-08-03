@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import voluptuous as vol
 
 from homeassistant import config_entries
@@ -50,10 +51,12 @@ class SatelConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             try:
                 await hub.connect()
                 self._devices = await hub.discover_devices()
-            except (ConnectionError, OSError):
+            except (asyncio.TimeoutError, ConnectionError, OSError):
                 errors["base"] = "cannot_connect"
             else:
                 return await self.async_step_select()
+            finally:
+                await hub.async_close()
 
         data_schema = vol.Schema(
             {
