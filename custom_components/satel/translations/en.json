@@ -1,0 +1,27 @@
+{
+  "title": "Satel Alarm",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to Satel",
+        "description": "Set up connection to your Satel alarm panel.",
+        "data": {
+          "host": "Host",
+          "port": "Port"
+        }
+      },
+      "select": {
+        "title": "Select devices",
+        "description": "Choose zones and outputs to add.",
+        "data": {
+          "zones": "Zones",
+          "outputs": "Outputs"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect",
+      "unknown": "Unexpected error"
+    }
+  }
+}

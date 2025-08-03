@@ -2,9 +2,16 @@
   "domain": "satel",
   "name": "Satel Alarm",
   "version": "0.1.0",
-  "documentation": "https://www.satel.pl",
+ codex/add-readme.md-with-documentation-details
+  "documentation": "https://github.com/yourname/satel/blob/main/README.md",
   "requirements": [],
   "codeowners": ["@yourname"],
+=======
+  "documentation": "https://www.home-assistant.io/integrations/satel",
+  "requirements": ["pysatel==0.0.1"],
+  "codeowners": ["@openai"],
+ main
   "config_flow": true,
-  "iot_class": "local_polling"
+  "iot_class": "local_polling",
+  "description": "Connects to a Satel alarm panel and automatically discovers zones and outputs during setup. Discovery uses a basic LIST command and may not detect all device types."
 }
