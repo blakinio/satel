@@ -17,10 +17,22 @@ except ModuleNotFoundError:  # pragma: no cover - simple stubs
     CONF_PORT = "port"
     ConfigType = dict[str, Any]
 
+ codex/extend-config_flow.py-for-credential-handling
+ codex/extend-config_flow.py-for-credential-handling
+=======
+ main
 from .const import (
     DOMAIN,
     DEFAULT_HOST,
     DEFAULT_PORT,
+ codex/extend-config_flow.py-for-credential-handling
+    CONF_ENCRYPTION_KEY,
+    CONF_USER_CODE,
+)
+=======
+from .const import DOMAIN, DEFAULT_HOST, DEFAULT_PORT, CONF_CODE
+ main
+=======
     CONF_CODE,
 codex/add-configurable-timeout-to-send_command
     DEFAULT_TIMEOUT,
@@ -29,6 +41,7 @@ codex/add-configurable-timeout-to-send_command
     DEFAULT_ENCODING,
  main
 )
+ main
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -43,6 +56,25 @@ PLATFORMS: list[str] = [
 class SatelHub:
     """Simple Satel client communicating over TCP."""
 
+ codex/extend-config_flow.py-for-credential-handling
+ codex/extend-config_flow.py-for-credential-handling
+    def __init__(
+        self,
+        host: str,
+        port: int,
+        user_code: str | None = None,
+        encryption_key: str | None = None,
+    ) -> None:
+        self._host = host
+        self._port = port
+        self._user_code = user_code
+        self._encryption_key = encryption_key
+=======
+    def __init__(self, host: str, port: int, code: str) -> None:
+        self._host = host
+        self._port = port
+        self._code = code
+=======
  codex/add-configurable-timeout-to-send_command
     def __init__(self, host: str, port: int, code: str, timeout: float = DEFAULT_TIMEOUT) -> None:
         self._host = host
@@ -55,6 +87,7 @@ class SatelHub:
         self._port = port
         self._code = code
         self._encoding = encoding
+ main
  main
         self._reader: asyncio.StreamReader | None = None
         self._writer: asyncio.StreamWriter | None = None
@@ -84,6 +117,21 @@ codex/wrap-asyncio.open_connection-in-try/except
         self._reader, self._writer = await asyncio.open_connection(
             self._host, self._port
         )
+ codex/extend-config_flow.py-for-credential-handling
+        if self._user_code or self._encryption_key:
+            auth_parts: list[str] = []
+            if self._user_code:
+                auth_parts.append(self._user_code)
+            if self._encryption_key:
+                auth_parts.append(self._encryption_key)
+            auth_cmd = "AUTH " + " ".join(auth_parts)
+            _LOGGER.debug("Authenticating with Satel central")
+            self._writer.write((auth_cmd + "\n").encode())
+            await self._writer.drain()
+            response = await self._reader.readline()
+            if response.decode().strip().upper() != "OK":
+                raise ConnectionError("Authentication failed")
+=======
         await self.send_command(f"LOGIN {self._code}")
 
  codex/add-configurable-timeout-to-send_command
@@ -102,6 +150,7 @@ codex/wrap-asyncio.open_connection-in-try/except
                 pass
         self._reader = None
         self._writer = None
+ main
 
     async def async_close(self) -> None:
         """Close the connection to the Satel central."""
@@ -303,7 +352,11 @@ main
 =======
             _LOGGER.error("Device discovery failed: %s", err)
             metadata = default_metadata
+ codex/extend-config_flow.py-for-credential-handling
+ 
+=======
  pr/44
+ main
         return metadata
 
  codex/refactor-async_unload_entry-to-call-async_close
@@ -334,9 +387,19 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Satel from a config entry."""
     host = entry.data.get(CONF_HOST, DEFAULT_HOST)
     port = entry.data.get(CONF_PORT, DEFAULT_PORT)
+    user_code = entry.data.get(CONF_USER_CODE)
+    encryption_key = entry.data.get(CONF_ENCRYPTION_KEY)
 
+ codex/extend-config_flow.py-for-credential-handling
+    hub = SatelHub(host, port, user_code, encryption_key)
+    await hub.connect()
+=======
     code = entry.data.get(CONF_CODE, "")
+ codex/extend-config_flow.py-for-credential-handling
+ main
+=======
     encoding = entry.data.get(CONF_ENCODING, DEFAULT_ENCODING)
+ main
 
     hub = SatelHub(host, port, code, encoding)
     await hub.connect()

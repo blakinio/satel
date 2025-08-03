@@ -24,5 +24,9 @@ codex/update-satel-manifest.json
  main
   "config_flow": true,
   "iot_class": "local_polling",
+ codex/extend-config_flow.py-for-credential-handling
+  "authentication": ["user_code", "encryption_key"]
+=======
   "description": "Connects to a Satel alarm panel and automatically discovers zones and outputs during setup. Discovery uses a basic LIST command and may not detect all device types."
+ main
 }
