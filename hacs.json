@@ -1,4 +1,10 @@
 {
+ codex/edit-hacs.json-for-integration-details
+  "name": "Satel",
+  "content_in_root": false,
+  "render_readme": true,
+  "domains": ["binary_sensor", "sensor", "switch"],
+=======
 codex/edit-hacs.json-for-satel-alarm
   "name": "Satel Alarm",
 =======
@@ -7,6 +13,7 @@ main
   "content_in_root": false,
   "render_readme": true,
   "domains": ["sensor", "binary_sensor", "switch"],
+ main
   "iot_class": "local_polling",
   "version": "0.1.0"
 }
