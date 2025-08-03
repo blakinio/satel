@@ -52,6 +52,55 @@ async def test_send_command_not_connected():
 
 
 @pytest.mark.asyncio
+async def test_send_command_reconnect_success(monkeypatch):
+    hub = SatelHub("1.2.3.4", 1234, "abcd")
+    reader1 = AsyncMock()
+    writer1 = MagicMock()
+    writer1.drain = AsyncMock()
+    writer1.write = MagicMock(side_effect=ConnectionResetError)
+    hub._reader = reader1
+    hub._writer = writer1
+
+    reader2 = AsyncMock()
+    reader2.readline = AsyncMock(return_value=b"OK\n")
+    writer2 = MagicMock()
+    writer2.drain = AsyncMock()
+    writer2.write = MagicMock()
+
+    async def reconnect():
+        hub._reader = reader2
+        hub._writer = writer2
+
+    monkeypatch.setattr(hub, "connect", AsyncMock(side_effect=reconnect))
+
+    response = await hub.send_command("TEST")
+
+    writer1.write.assert_called_once()
+    hub.connect.assert_awaited_once()
+    writer2.write.assert_called_once_with(b"TEST\n")
+    assert response == "OK"
+
+
+@pytest.mark.asyncio
+async def test_send_command_reconnect_failure(monkeypatch):
+    hub = SatelHub("1.2.3.4", 1234, "abcd")
+    reader1 = AsyncMock()
+    writer1 = MagicMock()
+    writer1.drain = AsyncMock()
+    writer1.write = MagicMock(side_effect=BrokenPipeError)
+    hub._reader = reader1
+    hub._writer = writer1
+
+    async def reconnect_fail():
+        raise Exception("boom")
+
+    monkeypatch.setattr(hub, "connect", AsyncMock(side_effect=reconnect_fail))
+
+    with pytest.raises(ConnectionError):
+        await hub.send_command("TEST")
+
+
+@pytest.mark.asyncio
 async def test_discover_devices(monkeypatch):
     hub = SatelHub("1.2.3.4", 1234, "abcd")
     monkeypatch.setattr(

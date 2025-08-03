@@ -41,16 +41,49 @@ class SatelHub:
         )
         await self.send_command(f"LOGIN {self._code}")
 
+    async def _close_connection(self) -> None:
+        """Close the current TCP connection."""
+        if self._writer is not None:
+            self._writer.close()
+            try:
+                await self._writer.wait_closed()
+            except Exception:  # pragma: no cover - best effort
+                pass
+        self._reader = None
+        self._writer = None
+
     async def send_command(self, command: str) -> str:
         """Send a command to the Satel central and return response."""
         if self._writer is None or self._reader is None:
             raise ConnectionError("Not connected to Satel central")
 
         _LOGGER.debug("Sending command: %s", command)
-        self._writer.write((command + "\n").encode())
-        await self._writer.drain()
-        data = await self._reader.readline()
-        return data.decode().strip()
+        try:
+            self._writer.write((command + "\n").encode())
+            await self._writer.drain()
+            data = await self._reader.readline()
+            if not data:
+                raise ConnectionResetError("No data received")
+            return data.decode().strip()
+        except (ConnectionResetError, BrokenPipeError, OSError, asyncio.IncompleteReadError) as err:
+            _LOGGER.warning("Connection error while sending '%s': %s", command, err)
+            await self._close_connection()
+            try:
+                await self.connect()
+            except Exception as conn_err:
+                raise ConnectionError("Failed to reconnect to Satel central") from conn_err
+            try:
+                self._writer.write((command + "\n").encode())
+                await self._writer.drain()
+                data = await self._reader.readline()
+                if not data:
+                    raise ConnectionError("No response after reconnection")
+                return data.decode().strip()
+            except Exception as err2:
+                await self._close_connection()
+                raise ConnectionError(
+                    "Failed to send command after reconnection"
+                ) from err2
 
     async def get_status(self) -> dict[str, Any]:
         """Retrieve status from Satel central."""
