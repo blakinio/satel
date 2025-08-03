@@ -7,7 +7,13 @@ from homeassistant import config_entries
 from homeassistant.const import CONF_HOST, CONF_PORT
 from homeassistant.data_entry_flow import FlowResult
 
-from .const import DOMAIN, DEFAULT_PORT, DEFAULT_HOST
+from .const import (
+    DOMAIN,
+    DEFAULT_PORT,
+    DEFAULT_HOST,
+    CONF_ENCRYPTION_KEY,
+    CONF_USER_CODE,
+)
 
 
 class SatelConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -26,6 +32,8 @@ class SatelConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             {
                 vol.Required(CONF_HOST, default=DEFAULT_HOST): str,
                 vol.Required(CONF_PORT, default=DEFAULT_PORT): int,
+                vol.Optional(CONF_USER_CODE): str,
+                vol.Optional(CONF_ENCRYPTION_KEY): str,
             }
         )
         return self.async_show_form(step_id="user", data_schema=data_schema, errors=errors)

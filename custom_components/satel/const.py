@@ -1,3 +1,5 @@
 DOMAIN = "satel"
 DEFAULT_PORT = 7094
 DEFAULT_HOST = "127.0.0.1"
+CONF_USER_CODE = "user_code"
+CONF_ENCRYPTION_KEY = "encryption_key"
