@@ -69,6 +69,22 @@ async def test_discover_devices(monkeypatch):
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("response", ["1=Zone1,2=Zone2", "1=Out1,3=Out3"])
+async def test_discover_devices_missing_delimiter(monkeypatch, caplog, response):
+    hub = SatelHub("1.2.3.4", 1234, "abcd")
+    monkeypatch.setattr(hub, "send_command", AsyncMock(return_value=response))
+
+    with caplog.at_level(logging.ERROR):
+        devices = await hub.discover_devices()
+
+    assert devices == {
+        "zones": [{"id": "1", "name": "Zone 1"}],
+        "outputs": [{"id": "1", "name": "Output 1"}],
+    }
+    assert response in caplog.text
+
+
+@pytest.mark.asyncio
 async def test_discover_devices_reconnect(monkeypatch):
     hub = SatelHub("1.2.3.4", 1234, "abcd")
     connect_mock = AsyncMock()
