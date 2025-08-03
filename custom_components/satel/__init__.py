@@ -46,6 +46,7 @@ class SatelHub:
         self._encoding = encoding
         self._reader: asyncio.StreamReader | None = None
         self._writer: asyncio.StreamWriter | None = None
+        self._lock = asyncio.Lock()
 
     @property
     def host(self) -> str:
@@ -109,6 +110,14 @@ class SatelHub:
                 raise
 =======
 
+ codex/implement-asyncio-lock-in-satelhub
+        async with self._lock:
+            _LOGGER.debug("Sending command: %s", command)
+            self._writer.write((command + "\n").encode())
+            await self._writer.drain()
+            data = await self._reader.readline()
+        return data.decode().strip()
+=======
         used_encoding = encoding or self._encoding or DEFAULT_ENCODING
         _LOGGER.debug("Sending command: %s", command)
  codex/modify-satelhub.send_command-for-encoding
@@ -148,6 +157,7 @@ class SatelHub:
                 raise ConnectionError(
                     "Failed to send command after reconnection"
                 ) from err2
+ main
  main
  main
 
