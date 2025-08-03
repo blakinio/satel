@@ -7,9 +7,13 @@ import logging
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.device_registry import DeviceInfo
 
 from . import SatelHub
 from .const import DOMAIN
+from .entity import SatelEntity
+
+_LOGGER = logging.getLogger(__name__)
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -18,21 +22,37 @@ _LOGGER = logging.getLogger(__name__)
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities
 ) -> None:
-    hub: SatelHub = hass.data[DOMAIN][entry.entry_id]
-    async_add_entities([SatelOutputSwitch(hub)], True)
+    data = hass.data[DOMAIN][entry.entry_id]
+    hub: SatelHub = data["hub"]
+    devices = data["devices"]
+    entities = [
+        SatelOutputSwitch(hub, output["id"], output["name"])
+        for output in devices.get("outputs", [])
+    ]
+    async_add_entities(entities, True)
 
 
-class SatelOutputSwitch(SwitchEntity):
+class SatelOutputSwitch(SatelEntity, SwitchEntity):
     """Switch to control Satel output."""
 
-    _attr_name = "Satel Output"
-
-    def __init__(self, hub: SatelHub) -> None:
-        self._hub = hub
+    def __init__(self, hub: SatelHub, output_id: str, name: str) -> None:
+        super().__init__(hub)
+        self._output_id = output_id
+        self._attr_name = name
         self._attr_is_on = False
-        self._attr_unique_id = "satel_output"
+        self._attr_unique_id = f"satel_output_{output_id}"
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Return device information for this entity."""
+        return DeviceInfo(
+            identifiers={(DOMAIN, self._hub.host)},
+            manufacturer="Satel",
+            name="Satel Alarm",
+        )
 
     async def async_turn_on(self, **kwargs) -> None:
+ codex/validate-response-after-sending-output-on/off
         response = await self._hub.send_command("OUTPUT ON")
         if response.strip().upper() == "OK":
             self._attr_is_on = True
@@ -45,7 +65,38 @@ class SatelOutputSwitch(SwitchEntity):
             self._attr_is_on = False
         else:
             _LOGGER.error("Failed to turn off output: %s", response)
+=======
+        try:
+            await self._hub.send_command(f"OUTPUT {self._output_id} ON")
+            self._attr_is_on = True
+            self._attr_available = True
+            self.async_write_ha_state()
+        except ConnectionError as err:
+            _LOGGER.warning(
+                "Failed to turn on output %s: %s", self._output_id, err
+            )
+            self._attr_available = False
+
+    async def async_turn_off(self, **kwargs) -> None:
+        try:
+            await self._hub.send_command(f"OUTPUT {self._output_id} OFF")
+            self._attr_is_on = False
+            self._attr_available = True
+            self.async_write_ha_state()
+        except ConnectionError as err:
+            _LOGGER.warning(
+                "Failed to turn off output %s: %s", self._output_id, err
+            )
+            self._attr_available = False
+ main
 
     async def async_update(self) -> None:
-        # In real implementation, query hub for output state
-        pass
+        try:
+            state = await self._hub.send_command(f"OUTPUT {self._output_id} STATE")
+            self._attr_is_on = state.upper() == "ON"
+            self._attr_available = True
+        except ConnectionError as err:
+            _LOGGER.warning(
+                "Failed to update state for output %s: %s", self._output_id, err
+            )
+            self._attr_available = False
