@@ -21,7 +21,7 @@ async def async_setup_entry(
 class SatelStatusSensor(SensorEntity):
     """Representation of Satel status sensor."""
 
-    _attr_name = "Satel Status"
+    _attr_translation_key = "status"
 
     def __init__(self, hub: SatelHub) -> None:
         self._hub = hub

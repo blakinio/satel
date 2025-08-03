@@ -1,0 +1,33 @@
+{
+  "title": "Satel Alarm",
+  "config": {
+    "step": {
+      "user": {
+        "data": {
+          "host": "Host",
+          "port": "Port"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect"
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "alarm": {
+        "name": "Satel Alarm"
+      }
+    },
+    "sensor": {
+      "status": {
+        "name": "Satel Status"
+      }
+    },
+    "switch": {
+      "output": {
+        "name": "Satel Output"
+      }
+    }
+  }
+}

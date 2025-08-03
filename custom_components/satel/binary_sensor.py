@@ -20,7 +20,7 @@ async def async_setup_entry(
 class SatelAlarmBinarySensor(BinarySensorEntity):
     """Binary sensor indicating alarm state."""
 
-    _attr_name = "Satel Alarm"
+    _attr_translation_key = "alarm"
 
     def __init__(self, hub: SatelHub) -> None:
         self._hub = hub

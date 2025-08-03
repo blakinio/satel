@@ -7,7 +7,8 @@ from homeassistant import config_entries
 from homeassistant.const import CONF_HOST, CONF_PORT
 from homeassistant.data_entry_flow import FlowResult
 
-from .const import DOMAIN, DEFAULT_PORT, DEFAULT_HOST
+from . import SatelHub
+from .const import DEFAULT_HOST, DEFAULT_PORT, DOMAIN
 
 
 class SatelConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -18,9 +19,15 @@ class SatelConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_user(self, user_input=None) -> FlowResult:
         errors = {}
         if user_input is not None:
-            return self.async_create_entry(
-                title=f"Satel {user_input[CONF_HOST]}", data=user_input
-            )
+            hub = SatelHub(user_input[CONF_HOST], user_input[CONF_PORT])
+            try:
+                await hub.connect()
+            except Exception:
+                errors["base"] = "cannot_connect"
+            else:
+                return self.async_create_entry(
+                    title=f"Satel {user_input[CONF_HOST]}", data=user_input
+                )
 
         data_schema = vol.Schema(
             {
