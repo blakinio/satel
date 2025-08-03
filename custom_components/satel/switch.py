@@ -57,6 +57,8 @@ class SatelOutputSwitch(SatelEntity, SwitchEntity):
             return
         self._attr_is_on = True
         self.async_write_ha_state()
+ zquiz2-codex/update-async_turn_on-and-async_turn_off-methods
+=======
 =======
             self._attr_is_on = True
             self._attr_available = True
@@ -66,6 +68,7 @@ class SatelOutputSwitch(SatelEntity, SwitchEntity):
                 "Failed to turn on output %s: %s", self._output_id, err
             )
             self._attr_available = False
+ main
  main
 
     async def async_turn_off(self, **kwargs) -> None:
@@ -77,6 +80,8 @@ class SatelOutputSwitch(SatelEntity, SwitchEntity):
             return
         self._attr_is_on = False
         self.async_write_ha_state()
+ zquiz2-codex/update-async_turn_on-and-async_turn_off-methods
+=======
 =======
             self._attr_is_on = False
             self._attr_available = True
@@ -86,6 +91,7 @@ class SatelOutputSwitch(SatelEntity, SwitchEntity):
                 "Failed to turn off output %s: %s", self._output_id, err
             )
             self._attr_available = False
+ main
  main
 
     async def async_update(self) -> None:
