@@ -16,6 +16,9 @@ from .entity import SatelEntity
 _LOGGER = logging.getLogger(__name__)
 
 
+_LOGGER = logging.getLogger(__name__)
+
+
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities
 ) -> None:
@@ -49,6 +52,20 @@ class SatelOutputSwitch(SatelEntity, SwitchEntity):
         )
 
     async def async_turn_on(self, **kwargs) -> None:
+ codex/validate-response-after-sending-output-on/off
+        response = await self._hub.send_command("OUTPUT ON")
+        if response.strip().upper() == "OK":
+            self._attr_is_on = True
+        else:
+            _LOGGER.error("Failed to turn on output: %s", response)
+
+    async def async_turn_off(self, **kwargs) -> None:
+        response = await self._hub.send_command("OUTPUT OFF")
+        if response.strip().upper() == "OK":
+            self._attr_is_on = False
+        else:
+            _LOGGER.error("Failed to turn off output: %s", response)
+=======
         try:
             await self._hub.send_command(f"OUTPUT {self._output_id} ON")
  codex/wrap-send_command-in-try/except-for-connection-errors
@@ -91,6 +108,9 @@ class SatelOutputSwitch(SatelEntity, SwitchEntity):
                 "Failed to turn off output %s: %s", self._output_id, err
             )
             self._attr_available = False
+ main
+ codex/validate-response-after-sending-output-on/off
+=======
  main
  main
 
