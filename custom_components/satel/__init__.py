@@ -26,6 +26,7 @@ class SatelHub:
         self._port = port
         self._reader: asyncio.StreamReader | None = None
         self._writer: asyncio.StreamWriter | None = None
+        self._lock = asyncio.Lock()
 
     @property
     def host(self) -> str:
@@ -41,14 +42,15 @@ class SatelHub:
 
     async def send_command(self, command: str) -> str:
         """Send a command to the Satel central and return response."""
-        if self._writer is None or self._reader is None:
-            raise ConnectionError("Not connected to Satel central")
+        async with self._lock:
+            if self._writer is None or self._reader is None:
+                raise ConnectionError("Not connected to Satel central")
 
-        _LOGGER.debug("Sending command: %s", command)
-        self._writer.write((command + "\n").encode())
-        await self._writer.drain()
-        data = await self._reader.readline()
-        return data.decode().strip()
+            _LOGGER.debug("Sending command: %s", command)
+            self._writer.write((command + "\n").encode())
+            await self._writer.drain()
+            data = await self._reader.readline()
+            return data.decode().strip()
 
     async def get_status(self) -> dict[str, Any]:
         """Retrieve status from Satel central."""

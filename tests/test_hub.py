@@ -1,7 +1,33 @@
 import asyncio
+import sys
+import time
+import types
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+
+
+homeassistant = types.ModuleType("homeassistant")
+config_entries = types.ModuleType("config_entries")
+class ConfigEntry:  # pragma: no cover - simple stub
+    pass
+
+config_entries.ConfigEntry = ConfigEntry
+const = types.ModuleType("const")
+const.CONF_HOST = "host"
+const.CONF_PORT = "port"
+core = types.ModuleType("core")
+core.HomeAssistant = object
+helpers = types.ModuleType("helpers")
+helpers.typing = types.ModuleType("typing")
+helpers.typing.ConfigType = dict
+
+sys.modules.setdefault("homeassistant", homeassistant)
+sys.modules.setdefault("homeassistant.config_entries", config_entries)
+sys.modules.setdefault("homeassistant.const", const)
+sys.modules.setdefault("homeassistant.core", core)
+sys.modules.setdefault("homeassistant.helpers", helpers)
+sys.modules.setdefault("homeassistant.helpers.typing", helpers.typing)
 
 from custom_components.satel import SatelHub
 
@@ -62,3 +88,30 @@ async def test_discover_devices(monkeypatch):
         "zones": [{"id": "1", "name": "Zone1"}, {"id": "2", "name": "Zone2"}],
         "outputs": [{"id": "1", "name": "Out1"}, {"id": "3", "name": "Out3"}],
     }
+
+
+@pytest.mark.asyncio
+async def test_send_command_serialization():
+    hub = SatelHub("1.2.3.4", 1234)
+    reader = AsyncMock()
+
+    async def delayed_readline():
+        await asyncio.sleep(0.1)
+        return b"OK\n"
+
+    reader.readline = AsyncMock(side_effect=delayed_readline)
+    writer = MagicMock()
+    writer.drain = AsyncMock()
+    writer.write = MagicMock()
+    hub._reader = reader
+    hub._writer = writer
+
+    start = time.perf_counter()
+    responses = await asyncio.gather(
+        hub.send_command("CMD1"),
+        hub.send_command("CMD2"),
+    )
+    elapsed = time.perf_counter() - start
+
+    assert responses == ["OK", "OK"]
+    assert elapsed >= 0.19
