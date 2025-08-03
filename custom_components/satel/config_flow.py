@@ -29,6 +29,16 @@ class SatelConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             self._host = user_input[CONF_HOST]
             self._port = user_input[CONF_PORT]
+ codex/handle-network-errors-in-config_flow
+            hub = SatelHub(self._host, self._port)
+            try:
+                await hub.connect()
+                self._devices = await hub.discover_devices()
+            except (OSError, ConnectionError):
+                errors["base"] = "cannot_connect"
+            else:
+                return await self.async_step_select()
+=======
             self._code = user_input[CONF_CODE]
  codex/handle-connection-errors-in-config-flow
             hub = SatelHub(self._host, self._port, self._code)
@@ -45,7 +55,7 @@ class SatelConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             await hub.connect()
             self._devices = await hub.discover_devices()
             return await self.async_step_select()
-main
+main main
 
         data_schema = vol.Schema(
             {
