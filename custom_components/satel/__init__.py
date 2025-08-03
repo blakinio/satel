@@ -6,10 +6,16 @@ import asyncio
 import logging
 from typing import Any
 
-from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_HOST, CONF_PORT
-from homeassistant.core import HomeAssistant
-from homeassistant.helpers.typing import ConfigType
+try:  # pragma: no cover - allows running tests without Home Assistant
+    from homeassistant.config_entries import ConfigEntry
+    from homeassistant.const import CONF_HOST, CONF_PORT
+    from homeassistant.core import HomeAssistant
+    from homeassistant.helpers.typing import ConfigType
+except ModuleNotFoundError:  # pragma: no cover - simple stubs
+    ConfigEntry = HomeAssistant = object
+    CONF_HOST = "host"
+    CONF_PORT = "port"
+    ConfigType = dict[str, Any]
 
 from .const import DOMAIN, DEFAULT_HOST, DEFAULT_PORT, CONF_CODE
 
@@ -123,8 +129,18 @@ class SatelHub:
                 "outputs": [{"id": "1", "name": "Output 1"}],
             }
 
+        default_metadata = {
+            "zones": [{"id": "1", "name": "Zone 1"}],
+            "outputs": [{"id": "1", "name": "Output 1"}],
+        }
+
+        parts = response.split("|", 1)
+        if len(parts) != 2:
+            _LOGGER.error("Unexpected LIST response: %s", response)
+            return default_metadata
+
+        zones_part, outputs_part = parts
         try:
-            zones_part, outputs_part = response.split("|")
             for item in zones_part.split(","):
                 if not item:
                     continue
@@ -142,11 +158,16 @@ class SatelHub:
                 out_id, name = item.split("=", 1)
                 metadata["outputs"].append({"id": out_id, "name": name})
         except Exception as err:  # pragma: no cover - demonstration only
+<<<<<<< HEAD
             _LOGGER.error("Device discovery failed: %s (response: %s)", err, response)
             metadata = {
                 "zones": [{"id": "1", "name": "Zone 1"}],
                 "outputs": [{"id": "1", "name": "Output 1"}],
             }
+=======
+            _LOGGER.error("Device discovery failed: %s", err)
+            metadata = default_metadata
+>>>>>>> pr/44
         return metadata
 
     async def arm(self) -> None:
