@@ -21,29 +21,83 @@ PLATFORMS: list[str] = ["sensor", "binary_sensor", "switch"]
 class SatelHub:
     """Simple Satel client communicating over TCP."""
 
-    def __init__(self, host: str, port: int) -> None:
+    def __init__(
+        self,
+        host: str,
+        port: int,
+        *,
+        connect_timeout: float = 10.0,
+        reconnect_delay: float = 1.0,
+        max_reconnect_delay: float = 30.0,
+        max_retries: int = 5,
+    ) -> None:
         self._host = host
         self._port = port
         self._reader: asyncio.StreamReader | None = None
         self._writer: asyncio.StreamWriter | None = None
+        self._connect_timeout = connect_timeout
+        self._reconnect_delay = reconnect_delay
+        self._max_reconnect_delay = max_reconnect_delay
+        self._max_retries = max_retries
 
     async def connect(self) -> None:
         """Connect to the Satel central."""
         _LOGGER.debug("Connecting to %s:%s", self._host, self._port)
-        self._reader, self._writer = await asyncio.open_connection(
-            self._host, self._port
-        )
+        try:
+            self._reader, self._writer = await asyncio.wait_for(
+                asyncio.open_connection(self._host, self._port),
+                timeout=self._connect_timeout,
+            )
+        except (asyncio.TimeoutError, OSError) as err:
+            _LOGGER.error(
+                "Failed to connect to %s:%s: %s", self._host, self._port, err
+            )
+            raise ConnectionError(err) from err
 
     async def send_command(self, command: str) -> str:
         """Send a command to the Satel central and return response."""
-        if self._writer is None or self._reader is None:
-            raise ConnectionError("Not connected to Satel central")
+        if self._writer is None or self._writer.is_closing() or self._reader is None:
+            await self._reconnect()
 
-        _LOGGER.debug("Sending command: %s", command)
-        self._writer.write((command + "\n").encode())
-        await self._writer.drain()
-        data = await self._reader.readline()
-        return data.decode().strip()
+        for attempt in range(self._max_retries):
+            try:
+                _LOGGER.debug("Sending command: %s", command)
+                self._writer.write((command + "\n").encode())
+                await self._writer.drain()
+                data = await asyncio.wait_for(
+                    self._reader.readline(), timeout=self._connect_timeout
+                )
+                return data.decode().strip()
+            except (ConnectionError, asyncio.TimeoutError, OSError) as err:
+                _LOGGER.warning("Error communicating with Satel: %s", err)
+                await self._reconnect()
+        raise ConnectionError("Failed to communicate with Satel")
+
+    async def _reconnect(self) -> None:
+        """Attempt to reconnect with exponential backoff."""
+        delay = self._reconnect_delay
+        self._close_connection()
+        for attempt in range(self._max_retries):
+            _LOGGER.debug("Reconnecting in %s seconds", delay)
+            await asyncio.sleep(delay)
+            try:
+                await self.connect()
+                _LOGGER.info("Reconnected to Satel central")
+                return
+            except ConnectionError:
+                delay = min(delay * 2, self._max_reconnect_delay)
+        raise ConnectionError("Unable to reconnect to Satel")
+
+    def _close_connection(self) -> None:
+        """Close the current connection if open."""
+        if self._writer is not None:
+            self._writer.close()
+            try:
+                asyncio.create_task(self._writer.wait_closed())
+            except Exception:  # pragma: no cover - best effort
+                pass
+        self._reader = None
+        self._writer = None
 
     async def get_status(self) -> dict[str, Any]:
         """Retrieve status from Satel central."""
