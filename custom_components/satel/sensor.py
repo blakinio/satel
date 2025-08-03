@@ -7,6 +7,7 @@ import logging
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.device_registry import DeviceInfo
 
 from . import SatelHub
 from .const import DOMAIN
@@ -36,6 +37,15 @@ class SatelZoneSensor(SatelEntity, SensorEntity):
         self._zone_id = zone_id
         self._attr_name = f"{name} status"
         self._attr_unique_id = f"satel_zone_status_{zone_id}"
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Return device information for this entity."""
+        return DeviceInfo(
+            identifiers={(DOMAIN, self._hub.host)},
+            manufacturer="Satel",
+            name="Satel Alarm",
+        )
 
     async def async_update(self) -> None:
         try:
