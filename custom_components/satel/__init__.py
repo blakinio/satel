@@ -246,6 +246,15 @@ class SatelHub:
  pr/44
         return metadata
 
+ codex/refactor-async_unload_entry-to-call-async_close
+    async def async_close(self) -> None:
+        """Close connection to the Satel central."""
+        if self._writer is not None:  # pragma: no cover - graceful shutdown
+            self._writer.close()
+            await self._writer.wait_closed()
+            self._writer = None
+            self._reader = None
+=======
     async def arm(self) -> None:
         """Arm the alarm."""
         await self.send_command("ARM")
@@ -253,6 +262,7 @@ class SatelHub:
     async def disarm(self) -> None:
         """Disarm the alarm."""
         await self.send_command("DISARM")
+ main
 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
@@ -291,6 +301,11 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unload_ok:
+ codex/refactor-async_unload_entry-to-call-async_close
+        data = hass.data[DOMAIN].pop(entry.entry_id)
+        hub = data["hub"]
+        await hub.async_close()
+=======
  codex/refactor-async_unload_entry-to-retrieve-hub
         data = hass.data[DOMAIN].pop(entry.entry_id)
         hub: SatelHub = data["hub"]
@@ -311,5 +326,6 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             await hub._writer.wait_closed()
         hub._writer = None
         hub._reader = None
+ main
  main
     return unload_ok

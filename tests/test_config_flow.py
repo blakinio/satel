@@ -16,6 +16,13 @@ codex/handle-network-errors-in-config_flow
 pytestmark = [pytest.mark.asyncio, pytest.mark.usefixtures("enable_custom_integrations")]
 
 
+ codex/refactor-async_unload_entry-to-call-async_close
+pytestmark = [pytest.mark.usefixtures("enable_custom_integrations")]
+
+
+@pytest.mark.asyncio
+=======
+ main
 async def test_config_flow_full(hass):
 =======
 @pytest.mark.asyncio
