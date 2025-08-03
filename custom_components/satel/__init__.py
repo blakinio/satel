@@ -98,7 +98,7 @@ class SatelHub:
                 out_id, name = item.split("=", 1)
                 metadata["outputs"].append({"id": out_id, "name": name})
         except Exception as err:  # pragma: no cover - demonstration only
-            _LOGGER.error("Device discovery failed: %s", err)
+            _LOGGER.error("Device discovery failed: %s (response: %s)", err, response)
             metadata = {
                 "zones": [{"id": "1", "name": "Zone 1"}],
                 "outputs": [{"id": "1", "name": "Output 1"}],
