@@ -1,5 +1,6 @@
 from unittest.mock import AsyncMock, MagicMock
 import logging
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
@@ -12,7 +13,7 @@ from custom_components.satel.switch import SatelOutputSwitch
 @pytest.mark.asyncio
 async def test_turn_on_writes_state(hass):
     hub = SatelHub("host", 1234, "code")
-    hub.send_command = AsyncMock()
+    hub.set_output = AsyncMock()
     coordinator = DataUpdateCoordinator(
         hass,
         logging.getLogger(__name__),
@@ -37,7 +38,7 @@ async def test_turn_on_writes_state(hass):
 @pytest.mark.asyncio
 async def test_turn_off_writes_state(hass):
     hub = SatelHub("host", 1234, "code")
-    hub.send_command = AsyncMock()
+    hub.set_output = AsyncMock()
     coordinator = DataUpdateCoordinator(
         hass,
         logging.getLogger(__name__),

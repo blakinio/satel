@@ -1,99 +1,53 @@
-from unittest.mock import AsyncMock, MagicMock
+import logging
+from unittest.mock import AsyncMock, patch
 
-import asyncio
 import pytest
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.satel import SatelHub
+from satel_integra.satel_integra import AlarmState
 
 
 @pytest.mark.asyncio
-async def test_send_command_reconnect_success(monkeypatch):
-    hub = SatelHub("host", 1234, "code")
-
-    reader1 = AsyncMock()
-    writer1 = MagicMock()
-    writer1.write = MagicMock(side_effect=ConnectionResetError)
-    writer1.drain = AsyncMock()
-    hub._reader = reader1
-    hub._writer = writer1
-
-    reader2 = AsyncMock()
-    reader2.readline = AsyncMock(return_value=b"OK\n")
-    writer2 = MagicMock()
-    writer2.write = MagicMock()
-    writer2.drain = AsyncMock()
-
-    async def reconnect():
-        hub._reader = reader2
-        hub._writer = writer2
-
-    reconnect_mock = AsyncMock(side_effect=reconnect)
-    monkeypatch.setattr(hub, "_reconnect", reconnect_mock)
-
-    response = await hub.send_command("TEST")
-
-    reconnect_mock.assert_awaited_once()
-    writer2.write.assert_called_once_with(b"TEST\n")
-    assert response == "OK"
+async def test_connect_failure():
+    satel = AsyncMock()
+    satel.connect = AsyncMock(return_value=False)
+    with patch("custom_components.satel.AsyncSatel", return_value=satel):
+        hub = SatelHub("host", 1234, "code")
+        with pytest.raises(ConnectionError):
+            await hub.connect()
 
 
 @pytest.mark.asyncio
-async def test_connect_login_success(monkeypatch):
-    hub = SatelHub("host", 1234, "code")
-
-    open_conn_mock = AsyncMock(return_value=(AsyncMock(), AsyncMock()))
-    monkeypatch.setattr(asyncio, "open_connection", open_conn_mock)
-
-    send_command_mock = AsyncMock(return_value="OK")
-    monkeypatch.setattr(hub, "send_command", send_command_mock)
-
-    await hub.connect()
-
-    open_conn_mock.assert_awaited_once()
-    send_command_mock.assert_awaited_once_with("LOGIN code")
-
-
-@pytest.mark.asyncio
-async def test_connect_login_failure(monkeypatch):
-    hub = SatelHub("host", 1234, "code")
-
-    open_conn_mock = AsyncMock(return_value=(AsyncMock(), AsyncMock()))
-    monkeypatch.setattr(asyncio, "open_connection", open_conn_mock)
-
-    send_command_mock = AsyncMock(return_value="ERR")
-    monkeypatch.setattr(hub, "send_command", send_command_mock)
-
-    async def close_conn():
-        hub._reader = None
-        hub._writer = None
-
-    close_mock = AsyncMock(side_effect=close_conn)
-    monkeypatch.setattr(hub, "_close_connection", close_mock)
-
-    with pytest.raises(ConnectionError):
+async def test_monitoring_updates_state(hass):
+    satel = AsyncMock()
+    satel.connect = AsyncMock(return_value=True)
+    satel.monitor_status = AsyncMock()
+    satel.partition_states = {}
+    with patch("custom_components.satel.AsyncSatel", return_value=satel):
+        hub = SatelHub("host", 1234, "code")
         await hub.connect()
+        coordinator = DataUpdateCoordinator(
+            hass,
+            logging.getLogger(__name__),
+            name="satel",
+            update_method=hub.get_overview,
+            config_entry=MockConfigEntry(domain="satel"),
+        )
+        await coordinator.async_refresh()
+        await hub.start_monitoring(coordinator)
 
-    send_command_mock.assert_awaited_once_with("LOGIN code")
-    close_mock.assert_awaited_once()
-    assert hub._reader is None
-    assert hub._writer is None
+        zone_cb = satel.monitor_status.call_args.kwargs["zone_changed_callback"]
+        output_cb = satel.monitor_status.call_args.kwargs["output_changed_callback"]
+        alarm_cb = satel.monitor_status.call_args.kwargs["alarm_status_callback"]
 
+        zone_cb({"zones": {1: 1}})
+        output_cb({"outputs": {2: 1}})
+        satel.partition_states = {AlarmState.TRIGGERED: [1]}
+        alarm_cb()
 
-@pytest.mark.asyncio
-async def test_send_command_reconnect_failure(monkeypatch):
-    hub = SatelHub("host", 1234, "code")
+        assert coordinator.data["zones"]["1"] == "ON"
+        assert coordinator.data["outputs"]["2"] == "ON"
+        assert coordinator.data["alarm"] == "ALARM"
 
-    reader = AsyncMock()
-    writer = MagicMock()
-    writer.write = MagicMock(side_effect=BrokenPipeError)
-    writer.drain = AsyncMock()
-    hub._reader = reader
-    hub._writer = writer
-
-    reconnect_mock = AsyncMock(side_effect=ConnectionError)
-    monkeypatch.setattr(hub, "_reconnect", reconnect_mock)
-
-    with pytest.raises(ConnectionError):
-        await hub.send_command("CMD")
-
-    reconnect_mock.assert_awaited_once()

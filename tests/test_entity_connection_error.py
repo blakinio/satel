@@ -1,5 +1,6 @@
 from unittest.mock import AsyncMock, MagicMock
 import logging
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
@@ -59,7 +60,7 @@ async def test_switch_unavailable_on_coordinator_error(hass):
 @pytest.mark.asyncio
 async def test_switch_turn_on_handles_connection_error(hass):
     hub = SatelHub("host", 1234, "code")
-    hub.send_command = AsyncMock(side_effect=ConnectionError)
+    hub.set_output = AsyncMock(side_effect=ConnectionError)
     coordinator = DataUpdateCoordinator(
         hass,
         logging.getLogger(__name__),
@@ -82,7 +83,7 @@ async def test_switch_turn_on_handles_connection_error(hass):
 @pytest.mark.asyncio
 async def test_switch_turn_off_handles_connection_error(hass):
     hub = SatelHub("host", 1234, "code")
-    hub.send_command = AsyncMock(side_effect=ConnectionError)
+    hub.set_output = AsyncMock(side_effect=ConnectionError)
     coordinator = DataUpdateCoordinator(
         hass,
         logging.getLogger(__name__),

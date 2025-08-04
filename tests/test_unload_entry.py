@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock
 
 from custom_components.satel import SatelHub, async_unload_entry
 from custom_components.satel.const import DOMAIN
@@ -7,16 +7,12 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 
 @pytest.mark.asyncio
-async def test_unload_entry_closes_writer_and_removes_entry(hass):
+async def test_unload_entry_closes_connection_and_removes_entry(hass):
     entry = MockConfigEntry(domain=DOMAIN)
     entry.add_to_hass(hass)
 
-    writer = MagicMock()
-    writer.close = MagicMock()
-    writer.wait_closed = AsyncMock()
-
     hub = SatelHub("host", 1234, "code")
-    hub._writer = writer
+    hub.async_close = AsyncMock()
 
     hass.data[DOMAIN] = {entry.entry_id: {"hub": hub, "devices": {}, "coordinator": None}}
 
@@ -25,6 +21,5 @@ async def test_unload_entry_closes_writer_and_removes_entry(hass):
     result = await async_unload_entry(hass, entry)
 
     assert result
-    writer.close.assert_called_once()
-    writer.wait_closed.assert_awaited_once()
+    hub.async_close.assert_awaited_once()
     assert entry.entry_id not in hass.data[DOMAIN]
