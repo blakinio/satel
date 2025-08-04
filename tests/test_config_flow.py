@@ -10,6 +10,7 @@ from custom_components.satel.const import (
     CONF_ENCODING,
     DEFAULT_ENCODING,
 )
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 pytestmark = [pytest.mark.asyncio, pytest.mark.usefixtures("enable_custom_integrations")]
 
@@ -46,6 +47,7 @@ async def test_config_flow_full(hass):
         )
 
         assert result["type"] == data_entry_flow.FlowResultType.CREATE_ENTRY
+        assert result["result"].unique_id == "1.2.3.4"
         assert result["title"] == "Satel 1.2.3.4"
         data = result["data"].copy()
         data.pop("user_code", None)
@@ -85,3 +87,23 @@ async def test_config_flow_cannot_connect(hass):
         assert result["errors"] == {"base": "cannot_connect"}
         hub.connect.assert_awaited_once()
         hub.discover_devices.assert_not_called()
+
+
+async def test_config_flow_already_configured(hass):
+    entry = MockConfigEntry(domain=DOMAIN, unique_id="1.2.3.4")
+    entry.add_to_hass(hass)
+
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": "user"}
+    )
+    assert result["type"] == data_entry_flow.FlowResultType.FORM
+    assert result["step_id"] == "user"
+
+    with patch("custom_components.satel.config_flow.SatelHub") as hub_cls:
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {CONF_HOST: "1.2.3.4", CONF_PORT: 1234}
+        )
+
+    assert result["type"] == data_entry_flow.FlowResultType.ABORT
+    assert result["reason"] == "already_configured"
+    hub_cls.assert_not_called()

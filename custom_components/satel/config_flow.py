@@ -40,6 +40,9 @@ class SatelConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             self._encryption_key = user_input.get(CONF_ENCRYPTION_KEY)
             self._encoding = user_input.get(CONF_ENCODING, DEFAULT_ENCODING)
 
+            await self.async_set_unique_id(self._host)
+            self._abort_if_unique_id_configured()
+
             hub = SatelHub(
                 self._host,
                 self._port,
