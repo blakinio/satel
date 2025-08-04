@@ -49,5 +49,22 @@ async def test_monitoring_updates_state(hass):
 
         assert coordinator.data["zones"]["1"] == "ON"
         assert coordinator.data["outputs"]["2"] == "ON"
-        assert coordinator.data["alarm"] == "ALARM"
+        assert coordinator.data["alarm"]["1"] == "TRIGGERED"
+
+
+@pytest.mark.asyncio
+async def test_partition_commands():
+    satel = AsyncMock()
+    satel.connect = AsyncMock(return_value=True)
+    with patch("custom_components.satel.AsyncSatel", return_value=satel):
+        hub = SatelHub("host", 1234, "code")
+        await hub.connect()
+        satel.arm = AsyncMock()
+        satel.disarm = AsyncMock()
+        await hub.arm_home(2)
+        satel.arm.assert_awaited_with("code", [2], mode=1)
+        await hub.arm_night(3)
+        satel.arm.assert_awaited_with("code", [3], mode=2)
+        await hub.disarm_partition(4)
+        satel.disarm.assert_awaited_with("code", [4])
 

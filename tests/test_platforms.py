@@ -77,7 +77,7 @@ async def test_switch_setup_entry(hass, enable_custom_integrations):
     hub = SatelHub("host", 1234, "code")
     devices = {"zones": [], "outputs": [{"id": "1", "name": "Out"}]}
     async def _update3():
-        return {"outputs": {"1": "OFF"}, "zones": {}, "alarm": ""}
+        return {"outputs": {"1": "OFF"}, "zones": {}, "alarm": {}}
 
     coordinator = DataUpdateCoordinator(
         hass,

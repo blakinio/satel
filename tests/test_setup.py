@@ -16,13 +16,14 @@ async def test_setup_creates_entities(hass, enable_custom_integrations):
     entry.add_to_hass(hass)
 
     with patch("custom_components.satel.SatelHub.connect", AsyncMock()), \
+        patch("custom_components.satel.SatelHub.start_monitoring", AsyncMock()), \
         patch(
             "custom_components.satel.SatelHub.discover_devices",
             AsyncMock(return_value={"zones": [], "outputs": []}),
         ), \
         patch(
             "custom_components.satel.SatelHub.get_overview",
-            AsyncMock(return_value={"alarm": "ALARM", "zones": {}, "outputs": {}}),
+            AsyncMock(return_value={"alarm": {"1": "TRIGGERED"}, "zones": {}, "outputs": {}}),
         ):
         assert await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
@@ -33,7 +34,7 @@ async def test_setup_creates_entities(hass, enable_custom_integrations):
 
     state = hass.states.get("sensor.satel_status")
     assert state is not None
-    assert state.state == "ALARM"
+    assert state.state == "TRIGGERED"
 
 
 @pytest.mark.asyncio
@@ -43,6 +44,7 @@ async def test_switch_services(hass, enable_custom_integrations):
     entry.add_to_hass(hass)
 
     with patch("custom_components.satel.SatelHub.connect", AsyncMock()), \
+        patch("custom_components.satel.SatelHub.start_monitoring", AsyncMock()), \
         patch(
             "custom_components.satel.SatelHub.discover_devices",
             AsyncMock(
@@ -56,11 +58,11 @@ async def test_switch_services(hass, enable_custom_integrations):
             "custom_components.satel.SatelHub.get_overview",
             AsyncMock(
                 side_effect=[
-                    {"alarm": "READY", "zones": {}, "outputs": {"1": "OFF"}},
-                    {"alarm": "READY", "zones": {}, "outputs": {"1": "ON"}},
-                    {"alarm": "READY", "zones": {}, "outputs": {"1": "ON"}},
-                    {"alarm": "READY", "zones": {}, "outputs": {"1": "OFF"}},
-                    {"alarm": "READY", "zones": {}, "outputs": {"1": "OFF"}},
+                    {"alarm": {"1": "READY"}, "zones": {}, "outputs": {"1": "OFF"}},
+                    {"alarm": {"1": "READY"}, "zones": {}, "outputs": {"1": "ON"}},
+                    {"alarm": {"1": "READY"}, "zones": {}, "outputs": {"1": "ON"}},
+                    {"alarm": {"1": "READY"}, "zones": {}, "outputs": {"1": "OFF"}},
+                    {"alarm": {"1": "READY"}, "zones": {}, "outputs": {"1": "OFF"}},
                 ]
             ),
         ), \
