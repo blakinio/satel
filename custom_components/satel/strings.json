@@ -15,7 +15,8 @@
         "description": "Choose zones and outputs to add.",
         "data": {
           "zones": "Zones",
-          "outputs": "Outputs"
+          "outputs": "Outputs",
+          "partitions": "Partitions"
         }
       }
     },
