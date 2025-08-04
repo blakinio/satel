@@ -3,7 +3,7 @@
   "name": "Satel Alarm",
   "version": "0.1.0",
   "documentation": "https://github.com/blakinio/satel",
-  "requirements": [],
+  "requirements": ["satel-integra>=0.3.4"],
   "dependencies": [],
   "codeowners": ["@blakinio"],
   "config_flow": true,
