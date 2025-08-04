@@ -7,7 +7,8 @@
         "description": "Skonfiguruj połączenie z centralą alarmową Satel.",
         "data": {
           "host": "Host",
-          "port": "Port"
+          "port": "Port",
+          "code": "Kod"
         }
       },
       "select": {

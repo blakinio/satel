@@ -7,7 +7,8 @@
         "description": "Set up connection to your Satel alarm panel.",
         "data": {
           "host": "Host",
-          "port": "Port"
+          "port": "Port",
+          "code": "Code"
         }
       },
       "select": {
