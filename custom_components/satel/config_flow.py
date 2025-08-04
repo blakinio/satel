@@ -89,6 +89,7 @@ class SatelConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     CONF_ENCODING: self._encoding,
                     "zones": user_input.get("zones", []),
                     "outputs": user_input.get("outputs", []),
+                    "partitions": user_input.get("partitions", []),
                 },
             )
 
@@ -96,9 +97,16 @@ class SatelConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         output_options = {
             o["id"]: o["name"] for o in self._devices.get("outputs", [])
         }
+        partition_options = {
+            p["id"]: p.get("name", p["id"])
+            for p in self._devices.get("partitions", [])
+        }
 
         data_schema = vol.Schema(
             {
+                vol.Optional(
+                    "partitions", default=list(partition_options)
+                ): cv.multi_select(partition_options),
                 vol.Optional("zones", default=list(zone_options)): cv.multi_select(
                     zone_options
                 ),

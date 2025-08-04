@@ -16,7 +16,11 @@ pytestmark = [pytest.mark.asyncio, pytest.mark.usefixtures("enable_custom_integr
 
 
 async def test_config_flow_full(hass):
-    devices = {"zones": [{"id": "1", "name": "Zone"}], "outputs": [{"id": "2", "name": "Out"}]}
+    devices = {
+        "zones": [{"id": "1", "name": "Zone"}],
+        "outputs": [{"id": "2", "name": "Out"}],
+        "partitions": [{"id": "1", "name": "Part1"}, {"id": "2", "name": "Part2"}],
+    }
     with patch("custom_components.satel.config_flow.SatelHub") as hub_cls, \
         patch("custom_components.satel.async_setup_entry", AsyncMock(return_value=True)):
         hub = hub_cls.return_value
@@ -43,7 +47,7 @@ async def test_config_flow_full(hass):
         assert result["step_id"] == "select"
 
         result = await hass.config_entries.flow.async_configure(
-            result["flow_id"], {"zones": ["1"], "outputs": ["2"]}
+            result["flow_id"], {"zones": ["1"], "outputs": ["2"], "partitions": ["1", "2"]}
         )
 
         assert result["type"] == data_entry_flow.FlowResultType.CREATE_ENTRY
@@ -59,6 +63,7 @@ async def test_config_flow_full(hass):
             CONF_ENCODING: DEFAULT_ENCODING,
             "zones": ["1"],
             "outputs": ["2"],
+            "partitions": ["1", "2"],
         }
 
         hub.connect.assert_awaited_once()

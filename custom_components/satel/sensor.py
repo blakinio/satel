@@ -66,5 +66,8 @@ class SatelStatusSensor(SatelEntity, SensorEntity):
 
     @property
     def native_value(self) -> str | None:
-        return self.coordinator.data.get("alarm")
+        alarm = self.coordinator.data.get("alarm")
+        if isinstance(alarm, dict):
+            return next(iter(alarm.values()), None)
+        return alarm
 

@@ -69,5 +69,8 @@ class SatelAlarmBinarySensor(SatelEntity, BinarySensorEntity):
 
     @property
     def is_on(self) -> bool:
-        return self.coordinator.data.get("alarm", "").upper() == "ALARM"
+        alarm = self.coordinator.data.get("alarm")
+        if isinstance(alarm, dict):
+            return any(state.upper() == "TRIGGERED" for state in alarm.values())
+        return str(alarm).upper() == "ALARM"
 

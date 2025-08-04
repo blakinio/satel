@@ -42,7 +42,7 @@ class SatelHub:
         self._satel: AsyncSatel | None = None
         self._monitor_task: asyncio.Task | None = None
         self._coordinator: DataUpdateCoordinator | None = None
-        self._state: dict[str, Any] = {"alarm": "UNKNOWN", "zones": {}, "outputs": {}}
+        self._state: dict[str, Any] = {"alarm": {}, "zones": {}, "outputs": {}}
 
     @property
     def host(self) -> str:  # pragma: no cover - trivial
@@ -86,17 +86,28 @@ class SatelHub:
         def alarm_cb() -> None:
             if not self._satel:
                 return
-            if AlarmState.TRIGGERED in self._satel.partition_states:
-                self._state["alarm"] = "ALARM"
-            elif any(self._satel.partition_states.get(state) for state in (
-                AlarmState.ARMED_MODE0,
-                AlarmState.ARMED_MODE1,
-                AlarmState.ARMED_MODE2,
-                AlarmState.ARMED_MODE3,
-            )):
-                self._state["alarm"] = "ARMED"
-            else:
-                self._state["alarm"] = "READY"
+            states = self._satel.partition_states
+            partitions: set[int] = set()
+            for part_list in states.values():
+                partitions.update(part_list)
+            for part in partitions:
+                key = str(part)
+                if part in states.get(AlarmState.TRIGGERED, []) or part in states.get(
+                    AlarmState.TRIGGERED_FIRE, []
+                ):
+                    self._state["alarm"][key] = "TRIGGERED"
+                elif part in states.get(AlarmState.ENTRY_TIME, []) or part in states.get(
+                    AlarmState.EXIT_COUNTDOWN_OVER_10, []
+                ) or part in states.get(AlarmState.EXIT_COUNTDOWN_UNDER_10, []):
+                    self._state["alarm"][key] = "PENDING"
+                elif part in states.get(AlarmState.ARMED_MODE1, []):
+                    self._state["alarm"][key] = "ARMED_HOME"
+                elif part in states.get(AlarmState.ARMED_MODE2, []):
+                    self._state["alarm"][key] = "ARMED_NIGHT"
+                elif part in states.get(AlarmState.ARMED_MODE0, []):
+                    self._state["alarm"][key] = "ARMED_AWAY"
+                else:
+                    self._state["alarm"][key] = "DISARMED"
             _schedule_update()
 
         self._monitor_task = asyncio.create_task(
@@ -121,14 +132,20 @@ class SatelHub:
     async def get_overview(self) -> dict[str, Any]:
         """Return current known state."""
         return {
-            "alarm": self._state["alarm"],
+            "alarm": self._state["alarm"].copy(),
             "zones": self._state["zones"].copy(),
             "outputs": self._state["outputs"].copy(),
         }
 
     async def discover_devices(self) -> dict[str, list[dict[str, Any]]]:
         """Discovery is not available in protocol – return empty placeholders."""
-        return {"zones": [], "outputs": []}
+        return {
+            "zones": [],
+            "outputs": [],
+            "partitions": [
+                {"id": str(i), "name": f"Partition {i}"} for i in range(1, 33)
+            ],
+        }
 
     async def set_output(self, output_id: str, state: bool) -> None:
         """Turn given output on or off."""
@@ -136,15 +153,32 @@ class SatelHub:
             raise ConnectionError("Not connected")
         await self._satel.set_output(self._code, int(output_id), state)
 
-    async def arm(self) -> None:
+    async def arm(self, partition: int | None = None) -> None:
         if not self._satel:
             raise ConnectionError("Not connected")
-        await self._satel.arm(self._code, [1])
+        parts = [partition] if partition else [1]
+        await self._satel.arm(self._code, parts, mode=0)
 
-    async def disarm(self) -> None:
+    async def arm_home(self, partition: int | None = None) -> None:
         if not self._satel:
             raise ConnectionError("Not connected")
-        await self._satel.disarm(self._code, [1])
+        parts = [partition] if partition else [1]
+        await self._satel.arm(self._code, parts, mode=1)
+
+    async def arm_night(self, partition: int | None = None) -> None:
+        if not self._satel:
+            raise ConnectionError("Not connected")
+        parts = [partition] if partition else [1]
+        await self._satel.arm(self._code, parts, mode=2)
+
+    async def disarm(self, partition: int | None = None) -> None:
+        if not self._satel:
+            raise ConnectionError("Not connected")
+        parts = [partition] if partition else [1]
+        await self._satel.disarm(self._code, parts)
+
+    async def disarm_partition(self, partition: int) -> None:
+        await self.disarm(partition)
 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:  # pragma: no cover - YAML not supported

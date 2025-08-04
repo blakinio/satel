@@ -7,7 +7,14 @@ from homeassistant.components.alarm_control_panel import (
     AlarmControlPanelEntityFeature,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import STATE_ALARM_ARMED_AWAY, STATE_ALARM_DISARMED
+from homeassistant.const import (
+    STATE_ALARM_ARMED_AWAY,
+    STATE_ALARM_ARMED_HOME,
+    STATE_ALARM_ARMED_NIGHT,
+    STATE_ALARM_DISARMED,
+    STATE_ALARM_PENDING,
+    STATE_ALARM_TRIGGERED,
+)
 from homeassistant.core import HomeAssistant
 
 from . import SatelHub
@@ -22,32 +29,58 @@ async def async_setup_entry(
     data = hass.data[DOMAIN][entry.entry_id]
     hub: SatelHub = data["hub"]
     coordinator = data["coordinator"]
-    async_add_entities([SatelAlarmPanel(hub, coordinator)])
+    partitions = entry.data.get("partitions") or ["1"]
+    async_add_entities(
+        [SatelAlarmPanel(hub, coordinator, part) for part in partitions]
+    )
 
 
 class SatelAlarmPanel(SatelEntity, AlarmControlPanelEntity):
-    """Representation of the Satel alarm panel."""
+    """Representation of a Satel partition."""
 
-    _attr_name = "Satel Alarm"
-    _attr_unique_id = "satel_alarm"
-    _attr_supported_features = AlarmControlPanelEntityFeature.ARM_AWAY
+    _attr_supported_features = (
+        AlarmControlPanelEntityFeature.ARM_AWAY
+        | AlarmControlPanelEntityFeature.ARM_HOME
+        | AlarmControlPanelEntityFeature.ARM_NIGHT
+    )
 
-    def __init__(self, hub: SatelHub, coordinator) -> None:
+    def __init__(self, hub: SatelHub, coordinator, partition: str) -> None:
         super().__init__(hub, coordinator)
+        self._partition = partition
+        self._attr_name = f"Satel Alarm {partition}"
+        self._attr_unique_id = f"satel_alarm_{partition}"
         self._attr_state = STATE_ALARM_DISARMED
 
     async def async_alarm_arm_away(self, code: str | None = None) -> None:
-        await self._hub.arm()
+        await self._hub.arm(self._partition)
+        await self.coordinator.async_request_refresh()
+
+    async def async_alarm_arm_home(self, code: str | None = None) -> None:
+        await self._hub.arm_home(self._partition)
+        await self.coordinator.async_request_refresh()
+
+    async def async_alarm_arm_night(self, code: str | None = None) -> None:
+        await self._hub.arm_night(self._partition)
         await self.coordinator.async_request_refresh()
 
     async def async_alarm_disarm(self, code: str | None = None) -> None:
-        await self._hub.disarm()
+        await self._hub.disarm_partition(self._partition)
         await self.coordinator.async_request_refresh()
 
     @property
     def state(self) -> str:
-        alarm = self.coordinator.data.get("alarm", "").upper()
-        if alarm == "ARMED":
+        alarm = (
+            self.coordinator.data.get("alarm", {}).get(str(self._partition), "")
+        ).upper()
+        if alarm == "ARMED_AWAY":
             return STATE_ALARM_ARMED_AWAY
+        if alarm == "ARMED_HOME":
+            return STATE_ALARM_ARMED_HOME
+        if alarm == "ARMED_NIGHT":
+            return STATE_ALARM_ARMED_NIGHT
+        if alarm == "PENDING":
+            return STATE_ALARM_PENDING
+        if alarm == "TRIGGERED":
+            return STATE_ALARM_TRIGGERED
         return STATE_ALARM_DISARMED
 
