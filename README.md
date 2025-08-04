@@ -51,4 +51,6 @@ After adding the configuration, restart Home Assistant.
 - Ensure the Satel controller is reachable on the network.
 - Check the Home Assistant logs for detailed error messages.
 - Remove and re-add the integration if entities are missing.
+- If the setup wizard shows a "Nieoczekiwany błąd/Unexpected error" message,
+  verify that the `satel-integra` package version is at least 0.3.4.
 
