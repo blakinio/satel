@@ -56,8 +56,9 @@ class SatelZoneSensor(SatelEntity, SensorEntity):
         for key in ["tamper", "troubles", "bypass", "alarm_memory"]:
             value = data.get(key, {}).get(self._zone_id)
             if isinstance(value, str) and value.upper() == "ON":
-                return key.upper()
-        return data.get("zones", {}).get(self._zone_id)
+                return "trouble" if key == "troubles" else key
+        zone_state = data.get("zones", {}).get(self._zone_id)
+        return zone_state.lower() if isinstance(zone_state, str) else zone_state
 
     @property
     def extra_state_attributes(self) -> dict[str, str | None]:

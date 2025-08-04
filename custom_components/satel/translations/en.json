@@ -30,7 +30,7 @@
         "name": "Zone",
         "state_attributes": {
           "tamper": {"name": "Tamper"},
-          "troubles": {"name": "Troubles"},
+          "troubles": {"name": "Trouble"},
           "bypass": {"name": "Bypass"},
           "alarm_memory": {"name": "Alarm memory"}
         }
