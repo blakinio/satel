@@ -30,7 +30,7 @@
         "name": "Strefa",
         "state_attributes": {
           "tamper": {"name": "Sabotaż"},
-          "troubles": {"name": "Awarie"},
+          "troubles": {"name": "Awaria"},
           "bypass": {"name": "By-pass"},
           "alarm_memory": {"name": "Pamięć alarmu"}
         }
