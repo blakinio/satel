@@ -48,7 +48,6 @@ async def test_config_flow_full(hass):
                 CONF_HOST: "1.2.3.4",
                 CONF_PORT: 1234,
                 CONF_CODE: "abcd",
-                CONF_ENCODING: DEFAULT_ENCODING,
             },
         )
         assert result["type"] == data_entry_flow.FlowResultType.FORM
@@ -97,7 +96,7 @@ async def test_config_flow_cannot_connect(hass):
         assert result["step_id"] == "user"
 
         result = await hass.config_entries.flow.async_configure(
-            result["flow_id"], {CONF_HOST: "1.2.3.4", CONF_PORT: 1234}
+            result["flow_id"], {CONF_HOST: "1.2.3.4", CONF_PORT: 1234, CONF_CODE: "abcd"}
         )
 
         assert result["type"] == data_entry_flow.FlowResultType.FORM
@@ -118,7 +117,7 @@ async def test_config_flow_already_configured(hass):
 
     with patch("custom_components.satel.config_flow.SatelHub") as hub_cls:
         result = await hass.config_entries.flow.async_configure(
-            result["flow_id"], {CONF_HOST: "1.2.3.4", CONF_PORT: 1234}
+            result["flow_id"], {CONF_HOST: "1.2.3.4", CONF_PORT: 1234, CONF_CODE: "abcd"}
         )
 
     assert result["type"] == data_entry_flow.FlowResultType.ABORT
