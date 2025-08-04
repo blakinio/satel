@@ -41,7 +41,8 @@ After adding the configuration, restart Home Assistant.
 
 - Binary sensors for zones and partitions
 - Sensor entities for device status and diagnostics
-- Switch entities for arming and disarming
+- Switch entities to control Satel outputs
+- Arming and disarming via `alarm_control_panel` entity
 - Configuration flow for guided setup
 
 ## Troubleshooting
