@@ -28,6 +28,7 @@ from .const import (
     DEFAULT_RECONNECT_DELAY,
     CONF_ENCRYPTION_METHOD,
     DEFAULT_ENCRYPTION_METHOD,
+    ENCRYPTION_METHODS,
 )
 
 
@@ -100,7 +101,7 @@ class SatelConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 ): int,
                 vol.Optional(
                     CONF_ENCRYPTION_METHOD, default=DEFAULT_ENCRYPTION_METHOD
-                ): str,
+                ): vol.In(ENCRYPTION_METHODS),
             }
         )
         return self.async_show_form(
@@ -152,4 +153,47 @@ class SatelConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             }
         )
         return self.async_show_form(step_id="select", data_schema=data_schema)
+
+    @staticmethod
+    def async_get_options_flow(
+        config_entry: config_entries.ConfigEntry,
+    ) -> "SatelOptionsFlow":
+        """Return options flow handler."""
+        return SatelOptionsFlow(config_entry)
+
+
+class SatelOptionsFlow(config_entries.OptionsFlow):
+    """Handle Satel options."""
+
+    def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
+        self._config_entry = config_entry
+
+    async def async_step_init(self, user_input: dict | None = None) -> FlowResult:
+        """Manage Satel options."""
+        if user_input is not None:
+            return self.async_create_entry(title="", data=user_input)
+
+        data = {**self._config_entry.data, **self._config_entry.options}
+        data_schema = vol.Schema(
+            {
+                vol.Optional(
+                    CONF_UPDATE_INTERVAL,
+                    default=data.get(CONF_UPDATE_INTERVAL, DEFAULT_UPDATE_INTERVAL),
+                ): int,
+                vol.Optional(
+                    CONF_TIMEOUT, default=data.get(CONF_TIMEOUT, DEFAULT_TIMEOUT)
+                ): int,
+                vol.Optional(
+                    CONF_RECONNECT_DELAY,
+                    default=data.get(CONF_RECONNECT_DELAY, DEFAULT_RECONNECT_DELAY),
+                ): int,
+                vol.Optional(
+                    CONF_ENCRYPTION_METHOD,
+                    default=data.get(
+                        CONF_ENCRYPTION_METHOD, DEFAULT_ENCRYPTION_METHOD
+                    ),
+                ): vol.In(ENCRYPTION_METHODS),
+            }
+        )
+        return self.async_show_form(step_id="init", data_schema=data_schema)
 

@@ -124,3 +124,40 @@ async def test_config_flow_already_configured(hass):
     assert result["type"] == data_entry_flow.FlowResultType.ABORT
     assert result["reason"] == "already_configured"
     hub_cls.assert_not_called()
+
+
+async def test_options_flow(hass):
+    """Test configuring options."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={
+            CONF_HOST: "1.2.3.4",
+            CONF_PORT: 1234,
+            CONF_UPDATE_INTERVAL: DEFAULT_UPDATE_INTERVAL,
+            CONF_TIMEOUT: DEFAULT_TIMEOUT,
+            CONF_RECONNECT_DELAY: DEFAULT_RECONNECT_DELAY,
+            CONF_ENCRYPTION_METHOD: DEFAULT_ENCRYPTION_METHOD,
+        },
+    )
+    entry.add_to_hass(hass)
+
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    assert result["type"] == data_entry_flow.FlowResultType.FORM
+
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        {
+            CONF_UPDATE_INTERVAL: 5,
+            CONF_TIMEOUT: 6,
+            CONF_RECONNECT_DELAY: 7,
+            CONF_ENCRYPTION_METHOD: DEFAULT_ENCRYPTION_METHOD,
+        },
+    )
+
+    assert result["type"] == data_entry_flow.FlowResultType.CREATE_ENTRY
+    assert entry.options == {
+        CONF_UPDATE_INTERVAL: 5,
+        CONF_TIMEOUT: 6,
+        CONF_RECONNECT_DELAY: 7,
+        CONF_ENCRYPTION_METHOD: DEFAULT_ENCRYPTION_METHOD,
+    }

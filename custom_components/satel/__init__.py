@@ -250,13 +250,19 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     user_code = entry.data.get(CONF_USER_CODE)
     encryption_key = entry.data.get(CONF_ENCRYPTION_KEY)
     encoding = entry.data.get(CONF_ENCODING, DEFAULT_ENCODING)
-    update_interval = entry.data.get(CONF_UPDATE_INTERVAL, DEFAULT_UPDATE_INTERVAL)
-    timeout = entry.data.get(CONF_TIMEOUT, DEFAULT_TIMEOUT)
-    reconnect_delay = entry.data.get(
-        CONF_RECONNECT_DELAY, DEFAULT_RECONNECT_DELAY
+    update_interval = entry.options.get(
+        CONF_UPDATE_INTERVAL,
+        entry.data.get(CONF_UPDATE_INTERVAL, DEFAULT_UPDATE_INTERVAL),
     )
-    encryption_method = entry.data.get(
-        CONF_ENCRYPTION_METHOD, DEFAULT_ENCRYPTION_METHOD
+    timeout = entry.options.get(
+        CONF_TIMEOUT, entry.data.get(CONF_TIMEOUT, DEFAULT_TIMEOUT)
+    )
+    reconnect_delay = entry.options.get(
+        CONF_RECONNECT_DELAY, entry.data.get(CONF_RECONNECT_DELAY, DEFAULT_RECONNECT_DELAY)
+    )
+    encryption_method = entry.options.get(
+        CONF_ENCRYPTION_METHOD,
+        entry.data.get(CONF_ENCRYPTION_METHOD, DEFAULT_ENCRYPTION_METHOD),
     )
 
     hub = SatelHub(
