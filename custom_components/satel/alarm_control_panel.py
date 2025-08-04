@@ -21,6 +21,14 @@ from . import SatelHub
 from .const import DOMAIN
 from .entity import SatelEntity
 
+ALARM_STATE_MAP = {
+    "ARMED_AWAY": STATE_ALARM_ARMED_AWAY,
+    "ARMED_HOME": STATE_ALARM_ARMED_HOME,
+    "ARMED_NIGHT": STATE_ALARM_ARMED_NIGHT,
+    "PENDING": STATE_ALARM_PENDING,
+    "TRIGGERED": STATE_ALARM_TRIGGERED,
+}
+
 
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities
@@ -72,15 +80,5 @@ class SatelAlarmPanel(SatelEntity, AlarmControlPanelEntity):
         alarm = (
             self.coordinator.data.get("alarm", {}).get(str(self._partition), "")
         ).upper()
-        if alarm == "ARMED_AWAY":
-            return STATE_ALARM_ARMED_AWAY
-        if alarm == "ARMED_HOME":
-            return STATE_ALARM_ARMED_HOME
-        if alarm == "ARMED_NIGHT":
-            return STATE_ALARM_ARMED_NIGHT
-        if alarm == "PENDING":
-            return STATE_ALARM_PENDING
-        if alarm == "TRIGGERED":
-            return STATE_ALARM_TRIGGERED
-        return STATE_ALARM_DISARMED
+        return ALARM_STATE_MAP.get(alarm, STATE_ALARM_DISARMED)
 

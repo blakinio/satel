@@ -211,31 +211,37 @@ class SatelHub:
             raise ConnectionError("Not connected")
         await self._satel.set_output(self._code, int(output_id), state)
 
-    async def arm(self, partition: int | None = None) -> None:
+    def _resolve_parts(self, partition: int | str | None) -> list[int]:
+        """Return a list with partition id or default to partition 1."""
+        if partition is None:
+            return [1]
+        return [int(partition)]
+
+    async def arm(self, partition: int | str | None = None) -> None:
         if not self._satel:
             raise ConnectionError("Not connected")
-        parts = [partition] if partition else [1]
+        parts = self._resolve_parts(partition)
         await self._satel.arm(self._code, parts, mode=0)
 
-    async def arm_home(self, partition: int | None = None) -> None:
+    async def arm_home(self, partition: int | str | None = None) -> None:
         if not self._satel:
             raise ConnectionError("Not connected")
-        parts = [partition] if partition else [1]
+        parts = self._resolve_parts(partition)
         await self._satel.arm(self._code, parts, mode=1)
 
-    async def arm_night(self, partition: int | None = None) -> None:
+    async def arm_night(self, partition: int | str | None = None) -> None:
         if not self._satel:
             raise ConnectionError("Not connected")
-        parts = [partition] if partition else [1]
+        parts = self._resolve_parts(partition)
         await self._satel.arm(self._code, parts, mode=2)
 
-    async def disarm(self, partition: int | None = None) -> None:
+    async def disarm(self, partition: int | str | None = None) -> None:
         if not self._satel:
             raise ConnectionError("Not connected")
-        parts = [partition] if partition else [1]
+        parts = self._resolve_parts(partition)
         await self._satel.disarm(self._code, parts)
 
-    async def disarm_partition(self, partition: int) -> None:
+    async def disarm_partition(self, partition: int | str) -> None:
         await self.disarm(partition)
 
 
