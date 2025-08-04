@@ -54,7 +54,7 @@ class SatelOutputSwitch(SatelEntity, SwitchEntity):
     async def async_turn_on(self, **kwargs) -> None:  # noqa: D401
         """Turn the output on."""
         try:
-            await self._hub.send_command(f"OUTPUT {self._output_id} ON")
+            await self._hub.set_output(self._output_id, True)
         except ConnectionError as err:
             _LOGGER.warning("Failed to turn on output %s: %s", self._output_id, err)
             return
@@ -65,7 +65,7 @@ class SatelOutputSwitch(SatelEntity, SwitchEntity):
     async def async_turn_off(self, **kwargs) -> None:  # noqa: D401
         """Turn the output off."""
         try:
-            await self._hub.send_command(f"OUTPUT {self._output_id} OFF")
+            await self._hub.set_output(self._output_id, False)
         except ConnectionError as err:
             _LOGGER.warning("Failed to turn off output %s: %s", self._output_id, err)
             return

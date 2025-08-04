@@ -65,8 +65,8 @@ async def test_switch_services(hass, enable_custom_integrations):
             ),
         ), \
         patch(
-            "custom_components.satel.SatelHub.send_command", AsyncMock()
-        ) as mock_send:
+            "custom_components.satel.SatelHub.set_output", AsyncMock()
+        ) as mock_set:
         assert await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
 
@@ -75,9 +75,9 @@ async def test_switch_services(hass, enable_custom_integrations):
         await hass.services.async_call(
             "switch", "turn_on", {"entity_id": entity_id}, blocking=True
         )
-        assert mock_send.await_args_list[0].args[0] == "OUTPUT 1 ON"
+        assert mock_set.await_args_list[0].args == ("1", True)
 
         await hass.services.async_call(
             "switch", "turn_off", {"entity_id": entity_id}, blocking=True
         )
-        assert mock_send.await_args_list[1].args[0] == "OUTPUT 1 OFF"
+        assert mock_set.await_args_list[1].args == ("1", False)
