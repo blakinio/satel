@@ -12,6 +12,7 @@ from homeassistant.const import CONF_HOST, CONF_PORT
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.exceptions import ConfigEntryNotReady
 
 from .const import (
     DOMAIN,
@@ -276,7 +277,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         encryption_key=encryption_key,
         encoding=encoding,
     )
-    await hub.connect()
+    try:
+        await hub.connect()
+    except ConnectionError as err:
+        await hub.async_close()
+        raise ConfigEntryNotReady from err
 
     try:
         devices = await hub.discover_devices()
