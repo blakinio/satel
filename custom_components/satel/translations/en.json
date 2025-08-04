@@ -27,12 +27,26 @@
   "entity": {
     "binary_sensor": {
       "zone": {
-        "name": "Zone"
+        "name": "Zone",
+        "state_attributes": {
+          "tamper": {"name": "Tamper"},
+          "troubles": {"name": "Troubles"},
+          "bypass": {"name": "Bypass"},
+          "alarm_memory": {"name": "Alarm memory"}
+        }
       }
     },
     "sensor": {
       "zone_status": {
-        "name": "Zone status"
+        "name": "Zone status",
+        "state": {
+          "on": "Violated",
+          "off": "Normal",
+          "tamper": "Tamper",
+          "trouble": "Trouble",
+          "bypass": "Bypass",
+          "alarm_memory": "Alarm memory"
+        }
       }
     },
     "switch": {

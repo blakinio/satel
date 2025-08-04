@@ -42,7 +42,15 @@ async def test_monitoring_updates_state(hass):
         output_cb = satel.monitor_status.call_args.kwargs["output_changed_callback"]
         alarm_cb = satel.monitor_status.call_args.kwargs["alarm_status_callback"]
 
-        zone_cb({"zones": {1: 1}})
+        zone_cb(
+            {
+                "zones": {1: 1},
+                "tamper": {1: 1},
+                "troubles": {1: 0},
+                "bypass": {1: 1},
+                "alarm_memory": {1: 0},
+            }
+        )
         output_cb({"outputs": {2: 1}})
         satel.partition_states = {AlarmState.TRIGGERED: [1]}
         alarm_cb()
@@ -50,6 +58,9 @@ async def test_monitoring_updates_state(hass):
         assert coordinator.data["zones"]["1"] == "ON"
         assert coordinator.data["outputs"]["2"] == "ON"
         assert coordinator.data["alarm"]["1"] == "TRIGGERED"
+        assert coordinator.data["tamper"]["1"] == "ON"
+        assert coordinator.data["bypass"]["1"] == "ON"
+        assert coordinator.data["troubles"]["1"] == "OFF"
 
 
 @pytest.mark.asyncio

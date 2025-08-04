@@ -42,7 +42,15 @@ class SatelHub:
         self._satel: AsyncSatel | None = None
         self._monitor_task: asyncio.Task | None = None
         self._coordinator: DataUpdateCoordinator | None = None
-        self._state: dict[str, Any] = {"alarm": {}, "zones": {}, "outputs": {}}
+        self._state: dict[str, Any] = {
+            "alarm": {},
+            "zones": {},
+            "outputs": {},
+            "troubles": {},
+            "tamper": {},
+            "bypass": {},
+            "alarm_memory": {},
+        }
 
     @property
     def host(self) -> str:  # pragma: no cover - trivial
@@ -70,12 +78,24 @@ class SatelHub:
                     "alarm": self._state["alarm"],
                     "zones": self._state["zones"].copy(),
                     "outputs": self._state["outputs"].copy(),
+                    "troubles": self._state["troubles"].copy(),
+                    "tamper": self._state["tamper"].copy(),
+                    "bypass": self._state["bypass"].copy(),
+                    "alarm_memory": self._state["alarm_memory"].copy(),
                 }
                 self._coordinator.async_set_updated_data(data)
 
         def zone_cb(status: dict[str, Any]) -> None:
             for zone, value in status.get("zones", {}).items():
                 self._state["zones"][str(zone)] = "ON" if value else "OFF"
+            for zone, value in status.get("troubles", {}).items():
+                self._state["troubles"][str(zone)] = "ON" if value else "OFF"
+            for zone, value in status.get("tamper", {}).items():
+                self._state["tamper"][str(zone)] = "ON" if value else "OFF"
+            for zone, value in status.get("bypass", {}).items():
+                self._state["bypass"][str(zone)] = "ON" if value else "OFF"
+            for zone, value in status.get("alarm_memory", {}).items():
+                self._state["alarm_memory"][str(zone)] = "ON" if value else "OFF"
             _schedule_update()
 
         def output_cb(status: dict[str, Any]) -> None:
@@ -135,6 +155,10 @@ class SatelHub:
             "alarm": self._state["alarm"].copy(),
             "zones": self._state["zones"].copy(),
             "outputs": self._state["outputs"].copy(),
+            "troubles": self._state["troubles"].copy(),
+            "tamper": self._state["tamper"].copy(),
+            "bypass": self._state["bypass"].copy(),
+            "alarm_memory": self._state["alarm_memory"].copy(),
         }
 
     async def discover_devices(self) -> dict[str, list[dict[str, Any]]]:
