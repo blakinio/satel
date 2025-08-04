@@ -1,4 +1,10 @@
-"""Satel alarm integration using official ETHM-1 protocol."""
+"""Satel alarm integration using official ETHM-1 push protocol.
+
+The integration communicates with the alarm via the encrypted ETHM-1
+protocol and receives realtime updates for zones, outputs and alarm
+states instead of periodically polling simple STATUS/STATE/LIST
+commands.
+"""
 
 from __future__ import annotations
 
