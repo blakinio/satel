@@ -4,12 +4,14 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from datetime import timedelta
 from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST, CONF_PORT
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.typing import ConfigType
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .const import (
     DOMAIN,
@@ -187,6 +189,30 @@ class SatelHub:
             _LOGGER.error("Failed to get status: %s", err)
             return {"raw": "unknown"}
 
+    async def get_overview(self) -> dict[str, Any]:
+        """Get overall alarm, zone and output states in a single request."""
+        try:
+            response = await self.send_command("STATE")
+        except ConnectionError as err:
+            raise err
+        parts = response.split("|", 2)
+        if len(parts) != 3:
+            raise UpdateFailed(f"Unexpected STATE response: {response}")
+        alarm_part, zones_part, outputs_part = parts
+        zones: dict[str, str] = {}
+        outputs: dict[str, str] = {}
+        for item in zones_part.split(","):
+            if not item or "=" not in item:
+                continue
+            zone_id, state = item.split("=", 1)
+            zones[zone_id] = state
+        for item in outputs_part.split(","):
+            if not item or "=" not in item:
+                continue
+            out_id, state = item.split("=", 1)
+            outputs[out_id] = state
+        return {"alarm": alarm_part, "zones": zones, "outputs": outputs}
+
     async def discover_devices(self) -> dict[str, list[dict[str, Any]]]:
         """Discover zones and outputs available on the panel."""
         metadata: dict[str, list[dict[str, Any]]] = {"zones": [], "outputs": []}
@@ -257,9 +283,22 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     except Exception:  # pragma: no cover - discovery is best effort
         devices = {"zones": [], "outputs": []}
 
+    coordinator = DataUpdateCoordinator[
+        dict[str, Any]
+    ](
+        hass,
+        _LOGGER,
+        name="satel",
+        update_method=hub.get_overview,
+        update_interval=timedelta(seconds=30),
+        config_entry=entry,
+    )
+    await coordinator.async_config_entry_first_refresh()
+
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = {
         "hub": hub,
         "devices": devices,
+        "coordinator": coordinator,
     }
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)

@@ -12,6 +12,7 @@ from homeassistant.core import HomeAssistant
 
 from . import SatelHub
 from .const import DOMAIN
+from .entity import SatelEntity
 
 
 async def async_setup_entry(
@@ -20,32 +21,33 @@ async def async_setup_entry(
     """Set up Satel alarm control panel from a config entry."""
     data = hass.data[DOMAIN][entry.entry_id]
     hub: SatelHub = data["hub"]
-    async_add_entities([SatelAlarmPanel(hub)], True)
+    coordinator = data["coordinator"]
+    async_add_entities([SatelAlarmPanel(hub, coordinator)])
 
 
-class SatelAlarmPanel(AlarmControlPanelEntity):
+class SatelAlarmPanel(SatelEntity, AlarmControlPanelEntity):
     """Representation of the Satel alarm panel."""
 
     _attr_name = "Satel Alarm"
     _attr_unique_id = "satel_alarm"
     _attr_supported_features = AlarmControlPanelEntityFeature.ARM_AWAY
 
-    def __init__(self, hub: SatelHub) -> None:
-        self._hub = hub
+    def __init__(self, hub: SatelHub, coordinator) -> None:
+        super().__init__(hub, coordinator)
         self._attr_state = STATE_ALARM_DISARMED
 
     async def async_alarm_arm_away(self, code: str | None = None) -> None:
         await self._hub.arm()
-        self._attr_state = STATE_ALARM_ARMED_AWAY
+        await self.coordinator.async_request_refresh()
 
     async def async_alarm_disarm(self, code: str | None = None) -> None:
         await self._hub.disarm()
-        self._attr_state = STATE_ALARM_DISARMED
+        await self.coordinator.async_request_refresh()
 
-    async def async_update(self) -> None:
-        status = await self._hub.send_command("STATUS")
-        if status.upper() == "ARMED":
-            self._attr_state = STATE_ALARM_ARMED_AWAY
-        else:
-            self._attr_state = STATE_ALARM_DISARMED
+    @property
+    def state(self) -> str:
+        alarm = self.coordinator.data.get("alarm", "").upper()
+        if alarm == "ARMED":
+            return STATE_ALARM_ARMED_AWAY
+        return STATE_ALARM_DISARMED
 

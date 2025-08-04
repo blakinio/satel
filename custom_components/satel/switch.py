@@ -22,13 +22,14 @@ async def async_setup_entry(
     data = hass.data[DOMAIN][entry.entry_id]
     hub: SatelHub = data["hub"]
     devices = data.get("devices", {})
+    coordinator = data["coordinator"]
 
     entities: list[SwitchEntity] = [
-        SatelOutputSwitch(hub, output["id"], output.get("name", output["id"]))
+        SatelOutputSwitch(hub, coordinator, output["id"], output.get("name", output["id"]))
         for output in devices.get("outputs", [])
     ]
 
-    async_add_entities(entities, True)
+    async_add_entities(entities)
 
 
 class SatelOutputSwitch(SatelEntity, SwitchEntity):
@@ -36,12 +37,19 @@ class SatelOutputSwitch(SatelEntity, SwitchEntity):
 
     _attr_translation_key = "output"
 
-    def __init__(self, hub: SatelHub, output_id: str, name: str) -> None:
-        super().__init__(hub)
+    def __init__(self, hub: SatelHub, coordinator, output_id: str, name: str) -> None:
+        super().__init__(hub, coordinator)
         self._output_id = output_id
         self._attr_name = name
         self._attr_unique_id = f"satel_output_{output_id}"
         self._attr_is_on = False
+
+    @property
+    def is_on(self) -> bool:
+        state = self.coordinator.data.get("outputs", {}).get(self._output_id)
+        if state is None:
+            return False
+        return state.upper() == "ON"
 
     async def async_turn_on(self, **kwargs) -> None:  # noqa: D401
         """Turn the output on."""
@@ -52,6 +60,7 @@ class SatelOutputSwitch(SatelEntity, SwitchEntity):
             return
         self._attr_is_on = True
         self.async_write_ha_state()
+        await self.coordinator.async_request_refresh()
 
     async def async_turn_off(self, **kwargs) -> None:  # noqa: D401
         """Turn the output off."""
@@ -62,14 +71,5 @@ class SatelOutputSwitch(SatelEntity, SwitchEntity):
             return
         self._attr_is_on = False
         self.async_write_ha_state()
-
-    async def async_update(self) -> None:
-        try:
-            state = await self._hub.send_command(f"OUTPUT {self._output_id} STATE")
-            self._attr_is_on = state.upper() == "ON"
-            self._attr_available = True
-        except ConnectionError as err:
-            _LOGGER.warning("Failed to update output %s: %s", self._output_id, err)
-            self._attr_is_on = None
-            self._attr_available = False
+        await self.coordinator.async_request_refresh()
 

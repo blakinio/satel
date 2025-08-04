@@ -18,7 +18,7 @@ async def test_unload_entry_closes_writer_and_removes_entry(hass):
     hub = SatelHub("host", 1234, "code")
     hub._writer = writer
 
-    hass.data[DOMAIN] = {entry.entry_id: hub}
+    hass.data[DOMAIN] = {entry.entry_id: {"hub": hub, "devices": {}, "coordinator": None}}
 
     hass.config_entries.async_unload_platforms = AsyncMock(return_value=True)
 
