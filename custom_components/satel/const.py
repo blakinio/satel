@@ -1,4 +1,0 @@
-DOMAIN = "satel"
-DEFAULT_PORT = 7094
-DEFAULT_HOST = "127.0.0.1"
-CONF_CODE = "code"
