@@ -15,7 +15,8 @@
         "description": "Wybierz strefy i wyjścia do dodania.",
         "data": {
           "zones": "Strefy",
-          "outputs": "Wyjścia"
+          "outputs": "Wyjścia",
+          "partitions": "Strefy"
         }
       }
     },
