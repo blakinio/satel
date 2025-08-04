@@ -99,3 +99,13 @@ async def test_discover_devices_reads_names():
     assert hub.monitored_zones == [1]
     assert hub.monitored_outputs == [2]
 
+
+@pytest.mark.asyncio
+async def test_discover_devices_missing_helpers():
+    """Ensure a helpful error is raised when name helpers are absent."""
+    hub = SatelHub("host", 1234, "code")
+    hub._satel = AsyncMock(spec=[])
+
+    with pytest.raises(RuntimeError, match="incompatible"):
+        await hub.discover_devices()
+

@@ -240,8 +240,18 @@ class SatelHub:
 
         # The ``satel-integra`` library exposes helpers to fetch configuration
         # of the device.  They return mappings indexed by id, e.g.
-        # ``{1: "Zone 1"}``.  We convert them to the structure expected by
-        # Home Assistant and store the ids for monitoring.
+        # ``{1: "Zone 1"}``.  Some older versions of the library didn't expose
+        # the helpers we rely on, so verify they are available before
+        # attempting to use them and provide a helpful error message if not.
+        if not all(
+            hasattr(self._satel, meth)
+            for meth in ("get_zone_names", "get_output_names")
+        ):
+            raise RuntimeError(
+                "The installed satel_integra library is incompatible: missing "
+                "get_zone_names/get_output_names helpers."
+            )
+
         zones_raw: dict[int, str] = await self._satel.get_zone_names()
         outputs_raw: dict[int, str] = await self._satel.get_output_names()
 
