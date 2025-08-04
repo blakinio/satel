@@ -1,0 +1,89 @@
+"""Satel sensor platform."""
+
+from __future__ import annotations
+
+import logging
+
+from homeassistant.components.sensor import SensorEntity
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
+
+from . import SatelHub
+from .const import DOMAIN
+from .entity import SatelEntity
+
+_LOGGER = logging.getLogger(__name__)
+
+
+async def async_setup_entry(
+    hass: HomeAssistant, entry: ConfigEntry, async_add_entities
+) -> None:
+    """Set up Satel sensors based on a config entry."""
+    data = hass.data[DOMAIN][entry.entry_id]
+    hub: SatelHub = data["hub"]
+    devices = data.get("devices", {})
+    coordinator = data["coordinator"]
+
+    entities: list[SensorEntity] = []
+    zones = devices.get("zones") or []
+    if zones:
+        entities.extend(
+            SatelZoneSensor(hub, coordinator, zone["id"], zone.get("name", zone["id"]))
+            for zone in zones
+        )
+    else:
+        entities.append(SatelStatusSensor(hub, coordinator))
+
+    async_add_entities(entities)
+
+
+class SatelZoneSensor(SatelEntity, SensorEntity):
+    """Sensor representing a Satel zone status."""
+
+    _attr_translation_key = "zone_status"
+
+    def __init__(
+        self, hub: SatelHub, coordinator, zone_id: str, name: str
+    ) -> None:
+        super().__init__(hub, coordinator)
+        self._zone_id = zone_id
+        self._attr_name = f"{name} status"
+        self._attr_unique_id = f"satel_zone_status_{zone_id}"
+
+    @property
+    def native_value(self) -> str | None:
+        data = self.coordinator.data
+        for key in ["tamper", "troubles", "bypass", "alarm_memory"]:
+            value = data.get(key, {}).get(self._zone_id)
+            if isinstance(value, str) and value.upper() == "ON":
+                return "trouble" if key == "troubles" else key
+        zone_state = data.get("zones", {}).get(self._zone_id)
+        return zone_state.lower() if isinstance(zone_state, str) else zone_state
+
+    @property
+    def extra_state_attributes(self) -> dict[str, str | None]:
+        data = self.coordinator.data
+        return {
+            "troubles": data.get("troubles", {}).get(self._zone_id),
+            "tamper": data.get("tamper", {}).get(self._zone_id),
+            "bypass": data.get("bypass", {}).get(self._zone_id),
+            "alarm_memory": data.get("alarm_memory", {}).get(self._zone_id),
+        }
+
+
+class SatelStatusSensor(SatelEntity, SensorEntity):
+    """Sensor returning raw status string."""
+
+    _attr_unique_id = "satel_status"
+    _attr_name = "Satel Status"
+
+    def __init__(self, hub: SatelHub, coordinator) -> None:
+        super().__init__(hub, coordinator)
+
+    @property
+    def native_value(self) -> str | None:
+        alarm = self.coordinator.data.get("alarm")
+        if isinstance(alarm, dict):
+            return next(iter(alarm.values()), None)
+        return alarm
+

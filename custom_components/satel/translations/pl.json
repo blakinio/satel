@@ -1,0 +1,59 @@
+{
+  "title": "Alarm Satel",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Połącz z Satel",
+        "description": "Skonfiguruj połączenie z centralą alarmową Satel.",
+        "data": {
+          "host": "Host",
+          "port": "Port"
+        }
+      },
+      "select": {
+        "title": "Wybierz urządzenia",
+        "description": "Wybierz strefy i wyjścia do dodania.",
+        "data": {
+          "zones": "Strefy",
+          "outputs": "Wyjścia"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Nie udało się połączyć",
+      "unknown": "Nieoczekiwany błąd"
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "zone": {
+        "name": "Strefa",
+        "state_attributes": {
+          "tamper": {"name": "Sabotaż"},
+          "troubles": {"name": "Awaria"},
+          "bypass": {"name": "By-pass"},
+          "alarm_memory": {"name": "Pamięć alarmu"}
+        }
+      }
+    },
+    "sensor": {
+      "zone_status": {
+        "name": "Status strefy",
+        "state": {
+          "on": "Naruszona",
+          "off": "Normalna",
+          "tamper": "Sabotaż",
+          "trouble": "Awarie",
+          "bypass": "By-pass",
+          "alarm_memory": "Pamięć alarmu"
+        }
+      }
+    },
+    "switch": {
+      "output": {
+        "name": "Wyjście"
+      }
+    }
+  }
+}
+
