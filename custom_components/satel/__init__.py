@@ -99,7 +99,10 @@ class SatelHub:
                 raise ConnectionError("Authentication failed")
 
         if self._code:
-            await self.send_command(f"LOGIN {self._code}")
+            response = await self.send_command(f"LOGIN {self._code}")
+            if response.strip().upper() != "OK":
+                await self._close_connection()
+                raise ConnectionError("Login failed")
 
     async def send_command(
         self,
