@@ -71,6 +71,8 @@ class SatelConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             try:
                 await hub.connect()
                 self._devices = await hub.discover_devices()
+            except RuntimeError:
+                errors["base"] = "incompatible"
             except (asyncio.TimeoutError, ConnectionError, OSError):
                 errors["base"] = "cannot_connect"
             except Exception as err:  # pylint: disable=broad-except
