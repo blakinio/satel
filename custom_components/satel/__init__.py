@@ -20,10 +20,19 @@ from satel_integra.satel_integra import AsyncSatel, AlarmState
 from .const import (
     CONF_CODE,
     CONF_ENCODING,
+    CONF_USER_CODE,
+    CONF_ENCRYPTION_KEY,
+    CONF_UPDATE_INTERVAL,
+    CONF_TIMEOUT,
+    CONF_RECONNECT_DELAY,
+    CONF_ENCRYPTION_METHOD,
     DEFAULT_ENCODING,
     DEFAULT_HOST,
     DEFAULT_PORT,
     DEFAULT_TIMEOUT,
+    DEFAULT_UPDATE_INTERVAL,
+    DEFAULT_RECONNECT_DELAY,
+    DEFAULT_ENCRYPTION_METHOD,
     DOMAIN,
 )
 
@@ -35,10 +44,30 @@ PLATFORMS: list[str] = ["sensor", "binary_sensor", "switch", "alarm_control_pane
 class SatelHub:
     """Wrapper around :class:`AsyncSatel` providing Home Assistant helpers."""
 
-    def __init__(self, host: str, port: int, code: str | None = None) -> None:
+    def __init__(
+        self,
+        host: str,
+        port: int,
+        code: str | None = None,
+        *,
+        user_code: str | None = None,
+        encryption_key: str | None = None,
+        encoding: str = DEFAULT_ENCODING,
+        update_interval: int = DEFAULT_UPDATE_INTERVAL,
+        timeout: int = DEFAULT_TIMEOUT,
+        reconnect_delay: int = DEFAULT_RECONNECT_DELAY,
+        encryption_method: str = DEFAULT_ENCRYPTION_METHOD,
+    ) -> None:
         self._host = host
         self._port = port
         self._code = code or ""
+        self._user_code = user_code
+        self._encryption_key = encryption_key
+        self._encoding = encoding
+        self._update_interval = update_interval
+        self._timeout = timeout
+        self._reconnect_delay = reconnect_delay
+        self._encryption_method = encryption_method
         self._satel: AsyncSatel | None = None
         self._monitor_task: asyncio.Task | None = None
         self._coordinator: DataUpdateCoordinator | None = None
@@ -60,6 +89,11 @@ class SatelHub:
         """Create connection to the alarm using the official protocol."""
         loop = asyncio.get_event_loop()
         self._satel = AsyncSatel(self._host, self._port, loop)
+        # Apply network tuning if available on the underlying library
+        if hasattr(self._satel, "_keep_alive_timeout"):
+            self._satel._keep_alive_timeout = self._timeout
+        if hasattr(self._satel, "_reconnection_timeout"):
+            self._satel._reconnection_timeout = self._reconnect_delay
         connected = await self._satel.connect()
         if not connected:
             raise ConnectionError("Unable to connect to Satel panel")
@@ -213,8 +247,30 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     host = entry.data.get(CONF_HOST, DEFAULT_HOST)
     port = entry.data.get(CONF_PORT, DEFAULT_PORT)
     code = entry.data.get(CONF_CODE)
+    user_code = entry.data.get(CONF_USER_CODE)
+    encryption_key = entry.data.get(CONF_ENCRYPTION_KEY)
+    encoding = entry.data.get(CONF_ENCODING, DEFAULT_ENCODING)
+    update_interval = entry.data.get(CONF_UPDATE_INTERVAL, DEFAULT_UPDATE_INTERVAL)
+    timeout = entry.data.get(CONF_TIMEOUT, DEFAULT_TIMEOUT)
+    reconnect_delay = entry.data.get(
+        CONF_RECONNECT_DELAY, DEFAULT_RECONNECT_DELAY
+    )
+    encryption_method = entry.data.get(
+        CONF_ENCRYPTION_METHOD, DEFAULT_ENCRYPTION_METHOD
+    )
 
-    hub = SatelHub(host, port, code)
+    hub = SatelHub(
+        host,
+        port,
+        code,
+        user_code=user_code,
+        encryption_key=encryption_key,
+        encoding=encoding,
+        update_interval=update_interval,
+        timeout=timeout,
+        reconnect_delay=reconnect_delay,
+        encryption_method=encryption_method,
+    )
     try:
         await hub.connect()
     except ConnectionError as err:
@@ -228,7 +284,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         _LOGGER,
         name="satel",
         update_method=hub.get_overview,
-        update_interval=timedelta(seconds=0),
+        update_interval=timedelta(seconds=update_interval),
         config_entry=entry,
     )
     await coordinator.async_config_entry_first_refresh()

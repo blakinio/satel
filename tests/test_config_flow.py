@@ -8,7 +8,15 @@ from custom_components.satel.const import (
     DOMAIN,
     CONF_CODE,
     CONF_ENCODING,
+    CONF_UPDATE_INTERVAL,
+    CONF_TIMEOUT,
+    CONF_RECONNECT_DELAY,
+    CONF_ENCRYPTION_METHOD,
     DEFAULT_ENCODING,
+    DEFAULT_UPDATE_INTERVAL,
+    DEFAULT_TIMEOUT,
+    DEFAULT_RECONNECT_DELAY,
+    DEFAULT_ENCRYPTION_METHOD,
 )
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
@@ -61,6 +69,10 @@ async def test_config_flow_full(hass):
             CONF_PORT: 1234,
             CONF_CODE: "abcd",
             CONF_ENCODING: DEFAULT_ENCODING,
+            CONF_UPDATE_INTERVAL: DEFAULT_UPDATE_INTERVAL,
+            CONF_TIMEOUT: DEFAULT_TIMEOUT,
+            CONF_RECONNECT_DELAY: DEFAULT_RECONNECT_DELAY,
+            CONF_ENCRYPTION_METHOD: DEFAULT_ENCRYPTION_METHOD,
             "zones": ["1"],
             "outputs": ["2"],
             "partitions": ["1", "2"],
