@@ -86,16 +86,16 @@ async def test_discover_devices_reads_names():
     satel = AsyncMock()
     satel.get_zone_names = AsyncMock(return_value={1: "Zone 1"})
     satel.get_output_names = AsyncMock(return_value={2: "Out 2"})
-    satel._monitored_zones = []
-    satel._monitored_outputs = []
 
     hub = SatelHub("host", 1234, "code")
     hub._satel = satel  # pretend already connected
+    hub.set_monitored_zones([])
+    hub.set_monitored_outputs([])
 
     devices = await hub.discover_devices()
 
     assert devices["zones"] == [{"id": "1", "name": "Zone 1"}]
     assert devices["outputs"] == [{"id": "2", "name": "Out 2"}]
-    assert satel._monitored_zones == [1]
-    assert satel._monitored_outputs == [2]
+    assert hub.monitored_zones == [1]
+    assert hub.monitored_outputs == [2]
 

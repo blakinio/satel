@@ -20,9 +20,9 @@ async def test_binary_sensor_setup_entry(hass, enable_custom_integrations):
     satel = AsyncMock()
     satel.get_zone_names = AsyncMock(return_value={1: "Zone"})
     satel.get_output_names = AsyncMock(return_value={})
-    satel._monitored_zones = []
-    satel._monitored_outputs = []
     hub._satel = satel
+    hub.set_monitored_zones([])
+    hub.set_monitored_outputs([])
     devices = await hub.discover_devices()
 
     async def _update():
@@ -64,9 +64,9 @@ async def test_sensor_setup_entry(hass, enable_custom_integrations):
     satel = AsyncMock()
     satel.get_zone_names = AsyncMock(return_value={1: "Zone"})
     satel.get_output_names = AsyncMock(return_value={})
-    satel._monitored_zones = []
-    satel._monitored_outputs = []
     hub._satel = satel
+    hub.set_monitored_zones([])
+    hub.set_monitored_outputs([])
     devices = await hub.discover_devices()
 
     async def _update2():
@@ -108,9 +108,9 @@ async def test_switch_setup_entry(hass, enable_custom_integrations):
     satel = AsyncMock()
     satel.get_zone_names = AsyncMock(return_value={})
     satel.get_output_names = AsyncMock(return_value={1: "Out"})
-    satel._monitored_zones = []
-    satel._monitored_outputs = []
     hub._satel = satel
+    hub.set_monitored_zones([])
+    hub.set_monitored_outputs([])
     devices = await hub.discover_devices()
 
     async def _update3():
