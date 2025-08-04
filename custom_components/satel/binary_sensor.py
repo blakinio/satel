@@ -4,7 +4,10 @@ from __future__ import annotations
 
 import logging
 
-from homeassistant.components.binary_sensor import BinarySensorEntity
+from homeassistant.components.binary_sensor import (
+    BinarySensorDeviceClass,
+    BinarySensorEntity,
+)
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
@@ -41,6 +44,7 @@ class SatelZoneBinarySensor(SatelEntity, BinarySensorEntity):
     """Binary sensor for a Satel zone."""
 
     _attr_translation_key = "zone"
+    _attr_device_class = BinarySensorDeviceClass.MOTION
 
     def __init__(
         self, hub: SatelHub, coordinator, zone_id: str, name: str
