@@ -91,6 +91,38 @@ class SatelHub:
     def host(self) -> str:  # pragma: no cover - trivial
         return self._host
 
+    @property
+    def monitored_zones(self) -> list[int]:
+        """Return list of zone IDs monitored for state changes."""
+        if not self._satel:
+            raise ConnectionError("Not connected")
+        return getattr(self._satel, "_monitored_zones", [])
+
+    def set_monitored_zones(self, zones: list[int]) -> None:
+        """Expose a public API to configure monitored zones."""
+        if not self._satel:
+            raise ConnectionError("Not connected")
+        if hasattr(type(self._satel), "set_monitored_zones"):
+            self._satel.set_monitored_zones(zones)
+        else:
+            self._satel._monitored_zones = zones
+
+    @property
+    def monitored_outputs(self) -> list[int]:
+        """Return list of output IDs monitored for state changes."""
+        if not self._satel:
+            raise ConnectionError("Not connected")
+        return getattr(self._satel, "_monitored_outputs", [])
+
+    def set_monitored_outputs(self, outputs: list[int]) -> None:
+        """Expose a public API to configure monitored outputs."""
+        if not self._satel:
+            raise ConnectionError("Not connected")
+        if hasattr(type(self._satel), "set_monitored_outputs"):
+            self._satel.set_monitored_outputs(outputs)
+        else:
+            self._satel._monitored_outputs = outputs
+
     async def connect(self) -> None:
         """Create connection to the alarm using the official protocol."""
         loop = asyncio.get_running_loop()
@@ -217,8 +249,8 @@ class SatelHub:
         outputs = [{"id": str(oid), "name": name} for oid, name in sorted(outputs_raw.items())]
 
         # Remember which entities should be monitored for state changes
-        self._satel._monitored_zones = list(zones_raw.keys())
-        self._satel._monitored_outputs = list(outputs_raw.keys())
+        self.set_monitored_zones(list(zones_raw.keys()))
+        self.set_monitored_outputs(list(outputs_raw.keys()))
 
         return {
             "zones": zones,
