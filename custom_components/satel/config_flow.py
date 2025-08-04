@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import voluptuous as vol
 
 from homeassistant import config_entries
@@ -30,6 +31,8 @@ from .const import (
     DEFAULT_ENCRYPTION_METHOD,
     ENCRYPTION_METHODS,
 )
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class SatelConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -79,6 +82,9 @@ class SatelConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 self._devices = await hub.discover_devices()
             except (asyncio.TimeoutError, ConnectionError, OSError):
                 errors["base"] = "cannot_connect"
+            except Exception as err:  # pylint: disable=broad-except
+                errors["base"] = "unknown"
+                _LOGGER.exception("Unexpected exception: %s", err)
             else:
                 return await self.async_step_select()
             finally:
