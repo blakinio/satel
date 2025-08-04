@@ -17,9 +17,6 @@ from .const import (
     DEFAULT_HOST,
     DEFAULT_PORT,
     CONF_CODE,
-    CONF_USER_CODE,
-    CONF_ENCRYPTION_KEY,
-    CONF_ENCODING,
     DEFAULT_ENCODING,
     CONF_UPDATE_INTERVAL,
     DEFAULT_UPDATE_INTERVAL,
@@ -47,20 +44,14 @@ class SatelConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             self._host = user_input[CONF_HOST]
             self._port = user_input[CONF_PORT]
-            self._code = user_input.get(CONF_CODE)
-            self._user_code = user_input.get(CONF_USER_CODE)
-            self._encryption_key = user_input.get(CONF_ENCRYPTION_KEY)
-            self._encoding = user_input.get(CONF_ENCODING, DEFAULT_ENCODING)
-            self._update_interval = user_input.get(
-                CONF_UPDATE_INTERVAL, DEFAULT_UPDATE_INTERVAL
-            )
-            self._timeout = user_input.get(CONF_TIMEOUT, DEFAULT_TIMEOUT)
-            self._reconnect_delay = user_input.get(
-                CONF_RECONNECT_DELAY, DEFAULT_RECONNECT_DELAY
-            )
-            self._encryption_method = user_input.get(
-                CONF_ENCRYPTION_METHOD, DEFAULT_ENCRYPTION_METHOD
-            )
+            self._user_code = None
+            self._encryption_key = None
+            self._encoding = DEFAULT_ENCODING
+            self._update_interval = DEFAULT_UPDATE_INTERVAL
+            self._timeout = DEFAULT_TIMEOUT
+            self._reconnect_delay = DEFAULT_RECONNECT_DELAY
+            self._encryption_method = DEFAULT_ENCRYPTION_METHOD
+            self._code = user_input[CONF_CODE]
 
             await self.async_set_unique_id(self._host)
             self._abort_if_unique_id_configured()
@@ -94,20 +85,7 @@ class SatelConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             {
                 vol.Required(CONF_HOST, default=DEFAULT_HOST): str,
                 vol.Required(CONF_PORT, default=DEFAULT_PORT): int,
-                vol.Optional(CONF_CODE): str,
-                vol.Optional(CONF_USER_CODE): str,
-                vol.Optional(CONF_ENCRYPTION_KEY): str,
-                vol.Optional(CONF_ENCODING, default=DEFAULT_ENCODING): str,
-                vol.Optional(
-                    CONF_UPDATE_INTERVAL, default=DEFAULT_UPDATE_INTERVAL
-                ): int,
-                vol.Optional(CONF_TIMEOUT, default=DEFAULT_TIMEOUT): int,
-                vol.Optional(
-                    CONF_RECONNECT_DELAY, default=DEFAULT_RECONNECT_DELAY
-                ): int,
-                vol.Optional(
-                    CONF_ENCRYPTION_METHOD, default=DEFAULT_ENCRYPTION_METHOD
-                ): vol.In(ENCRYPTION_METHODS),
+                vol.Required(CONF_CODE): str,
             }
         )
         return self.async_show_form(
@@ -123,13 +101,6 @@ class SatelConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     CONF_HOST: self._host,
                     CONF_PORT: self._port,
                     CONF_CODE: self._code,
-                    CONF_USER_CODE: self._user_code,
-                    CONF_ENCRYPTION_KEY: self._encryption_key,
-                    CONF_ENCODING: self._encoding,
-                    CONF_UPDATE_INTERVAL: self._update_interval,
-                    CONF_TIMEOUT: self._timeout,
-                    CONF_RECONNECT_DELAY: self._reconnect_delay,
-                    CONF_ENCRYPTION_METHOD: self._encryption_method,
                     "zones": user_input.get("zones", []),
                     "outputs": user_input.get("outputs", []),
                     "partitions": user_input.get("partitions", []),
