@@ -57,6 +57,16 @@ class SatelZoneBinarySensor(SatelEntity, BinarySensorEntity):
             return None
         return status.upper() == "ON"
 
+    @property
+    def extra_state_attributes(self) -> dict[str, str | None]:
+        data = self.coordinator.data
+        return {
+            "troubles": data.get("troubles", {}).get(self._zone_id),
+            "tamper": data.get("tamper", {}).get(self._zone_id),
+            "bypass": data.get("bypass", {}).get(self._zone_id),
+            "alarm_memory": data.get("alarm_memory", {}).get(self._zone_id),
+        }
+
 
 class SatelAlarmBinarySensor(SatelEntity, BinarySensorEntity):
     """Binary sensor representing overall alarm state."""

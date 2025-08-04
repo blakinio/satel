@@ -23,7 +23,17 @@ async def test_setup_creates_entities(hass, enable_custom_integrations):
         ), \
         patch(
             "custom_components.satel.SatelHub.get_overview",
-            AsyncMock(return_value={"alarm": {"1": "TRIGGERED"}, "zones": {}, "outputs": {}}),
+            AsyncMock(
+                return_value={
+                    "alarm": {"1": "TRIGGERED"},
+                    "zones": {},
+                    "outputs": {},
+                    "troubles": {},
+                    "tamper": {},
+                    "bypass": {},
+                    "alarm_memory": {},
+                }
+            ),
         ):
         assert await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
@@ -58,11 +68,51 @@ async def test_switch_services(hass, enable_custom_integrations):
             "custom_components.satel.SatelHub.get_overview",
             AsyncMock(
                 side_effect=[
-                    {"alarm": {"1": "READY"}, "zones": {}, "outputs": {"1": "OFF"}},
-                    {"alarm": {"1": "READY"}, "zones": {}, "outputs": {"1": "ON"}},
-                    {"alarm": {"1": "READY"}, "zones": {}, "outputs": {"1": "ON"}},
-                    {"alarm": {"1": "READY"}, "zones": {}, "outputs": {"1": "OFF"}},
-                    {"alarm": {"1": "READY"}, "zones": {}, "outputs": {"1": "OFF"}},
+                    {
+                        "alarm": {"1": "READY"},
+                        "zones": {},
+                        "outputs": {"1": "OFF"},
+                        "troubles": {},
+                        "tamper": {},
+                        "bypass": {},
+                        "alarm_memory": {},
+                    },
+                    {
+                        "alarm": {"1": "READY"},
+                        "zones": {},
+                        "outputs": {"1": "ON"},
+                        "troubles": {},
+                        "tamper": {},
+                        "bypass": {},
+                        "alarm_memory": {},
+                    },
+                    {
+                        "alarm": {"1": "READY"},
+                        "zones": {},
+                        "outputs": {"1": "ON"},
+                        "troubles": {},
+                        "tamper": {},
+                        "bypass": {},
+                        "alarm_memory": {},
+                    },
+                    {
+                        "alarm": {"1": "READY"},
+                        "zones": {},
+                        "outputs": {"1": "OFF"},
+                        "troubles": {},
+                        "tamper": {},
+                        "bypass": {},
+                        "alarm_memory": {},
+                    },
+                    {
+                        "alarm": {"1": "READY"},
+                        "zones": {},
+                        "outputs": {"1": "OFF"},
+                        "troubles": {},
+                        "tamper": {},
+                        "bypass": {},
+                        "alarm_memory": {},
+                    },
                 ]
             ),
         ), \

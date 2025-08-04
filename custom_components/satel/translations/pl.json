@@ -27,12 +27,26 @@
   "entity": {
     "binary_sensor": {
       "zone": {
-        "name": "Strefa"
+        "name": "Strefa",
+        "state_attributes": {
+          "tamper": {"name": "Sabotaż"},
+          "troubles": {"name": "Awarie"},
+          "bypass": {"name": "By-pass"},
+          "alarm_memory": {"name": "Pamięć alarmu"}
+        }
       }
     },
     "sensor": {
       "zone_status": {
-        "name": "Status strefy"
+        "name": "Status strefy",
+        "state": {
+          "on": "Naruszona",
+          "off": "Normalna",
+          "tamper": "Sabotaż",
+          "trouble": "Awarie",
+          "bypass": "By-pass",
+          "alarm_memory": "Pamięć alarmu"
+        }
       }
     },
     "switch": {

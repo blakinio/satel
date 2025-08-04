@@ -19,7 +19,15 @@ async def test_binary_sensor_setup_entry(hass, enable_custom_integrations):
     hub = SatelHub("host", 1234, "code")
     devices = {"zones": [{"id": "1", "name": "Zone"}], "outputs": []}
     async def _update():
-        return {}
+        return {
+            "alarm": {},
+            "zones": {},
+            "outputs": {},
+            "troubles": {},
+            "tamper": {},
+            "bypass": {},
+            "alarm_memory": {},
+        }
 
     coordinator = DataUpdateCoordinator(
         hass,
@@ -48,7 +56,15 @@ async def test_sensor_setup_entry(hass, enable_custom_integrations):
     hub = SatelHub("host", 1234, "code")
     devices = {"zones": [{"id": "1", "name": "Zone"}], "outputs": []}
     async def _update2():
-        return {}
+        return {
+            "alarm": {},
+            "zones": {},
+            "outputs": {},
+            "troubles": {},
+            "tamper": {},
+            "bypass": {},
+            "alarm_memory": {},
+        }
 
     coordinator = DataUpdateCoordinator(
         hass,
@@ -77,7 +93,15 @@ async def test_switch_setup_entry(hass, enable_custom_integrations):
     hub = SatelHub("host", 1234, "code")
     devices = {"zones": [], "outputs": [{"id": "1", "name": "Out"}]}
     async def _update3():
-        return {"outputs": {"1": "OFF"}, "zones": {}, "alarm": {}}
+        return {
+            "outputs": {"1": "OFF"},
+            "zones": {},
+            "alarm": {},
+            "troubles": {},
+            "tamper": {},
+            "bypass": {},
+            "alarm_memory": {},
+        }
 
     coordinator = DataUpdateCoordinator(
         hass,

@@ -52,7 +52,22 @@ class SatelZoneSensor(SatelEntity, SensorEntity):
 
     @property
     def native_value(self) -> str | None:
-        return self.coordinator.data.get("zones", {}).get(self._zone_id)
+        data = self.coordinator.data
+        for key in ["tamper", "troubles", "bypass", "alarm_memory"]:
+            value = data.get(key, {}).get(self._zone_id)
+            if isinstance(value, str) and value.upper() == "ON":
+                return key.upper()
+        return data.get("zones", {}).get(self._zone_id)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, str | None]:
+        data = self.coordinator.data
+        return {
+            "troubles": data.get("troubles", {}).get(self._zone_id),
+            "tamper": data.get("tamper", {}).get(self._zone_id),
+            "bypass": data.get("bypass", {}).get(self._zone_id),
+            "alarm_memory": data.get("alarm_memory", {}).get(self._zone_id),
+        }
 
 
 class SatelStatusSensor(SatelEntity, SensorEntity):
