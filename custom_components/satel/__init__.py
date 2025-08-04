@@ -202,10 +202,27 @@ class SatelHub:
         }
 
     async def discover_devices(self) -> dict[str, list[dict[str, Any]]]:
-        """Discovery is not available in protocol – return empty placeholders."""
+        """Return lists of zones, outputs and partitions available on the panel."""
+        if not self._satel:
+            raise ConnectionError("Not connected")
+
+        # The ``satel-integra`` library exposes helpers to fetch configuration
+        # of the device.  They return mappings indexed by id, e.g.
+        # ``{1: "Zone 1"}``.  We convert them to the structure expected by
+        # Home Assistant and store the ids for monitoring.
+        zones_raw: dict[int, str] = await self._satel.get_zone_names()
+        outputs_raw: dict[int, str] = await self._satel.get_output_names()
+
+        zones = [{"id": str(zid), "name": name} for zid, name in sorted(zones_raw.items())]
+        outputs = [{"id": str(oid), "name": name} for oid, name in sorted(outputs_raw.items())]
+
+        # Remember which entities should be monitored for state changes
+        self._satel._monitored_zones = list(zones_raw.keys())
+        self._satel._monitored_outputs = list(outputs_raw.keys())
+
         return {
-            "zones": [],
-            "outputs": [],
+            "zones": zones,
+            "outputs": outputs,
             "partitions": [
                 {"id": str(i), "name": f"Partition {i}"} for i in range(1, 33)
             ],

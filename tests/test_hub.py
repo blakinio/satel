@@ -79,3 +79,23 @@ async def test_partition_commands():
         await hub.disarm_partition(4)
         satel.disarm.assert_awaited_with("code", [4])
 
+
+@pytest.mark.asyncio
+async def test_discover_devices_reads_names():
+    """Ensure the hub fetches zone and output names from the panel."""
+    satel = AsyncMock()
+    satel.get_zone_names = AsyncMock(return_value={1: "Zone 1"})
+    satel.get_output_names = AsyncMock(return_value={2: "Out 2"})
+    satel._monitored_zones = []
+    satel._monitored_outputs = []
+
+    hub = SatelHub("host", 1234, "code")
+    hub._satel = satel  # pretend already connected
+
+    devices = await hub.discover_devices()
+
+    assert devices["zones"] == [{"id": "1", "name": "Zone 1"}]
+    assert devices["outputs"] == [{"id": "2", "name": "Out 2"}]
+    assert satel._monitored_zones == [1]
+    assert satel._monitored_outputs == [2]
+
