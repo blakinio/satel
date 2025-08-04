@@ -11,7 +11,7 @@ from custom_components.satel.switch import SatelOutputSwitch
 
 
 @pytest.mark.asyncio
-async def test_turn_on_writes_state(hass):
+async def test_turn_on_requests_refresh(hass):
     hub = SatelHub("host", 1234, "code")
     hub.set_output = AsyncMock()
     coordinator = DataUpdateCoordinator(
@@ -31,12 +31,12 @@ async def test_turn_on_writes_state(hass):
     await switch.async_turn_on()
 
     assert switch.is_on
-    switch.async_write_ha_state.assert_called_once()
+    switch.async_write_ha_state.assert_not_called()
     switch.coordinator.async_request_refresh.assert_called_once()
 
 
 @pytest.mark.asyncio
-async def test_turn_off_writes_state(hass):
+async def test_turn_off_requests_refresh(hass):
     hub = SatelHub("host", 1234, "code")
     hub.set_output = AsyncMock()
     coordinator = DataUpdateCoordinator(
@@ -47,7 +47,6 @@ async def test_turn_off_writes_state(hass):
         config_entry=MockConfigEntry(domain="satel"),
     )
     switch = SatelOutputSwitch(hub, coordinator, "1", "Out")
-    switch._attr_is_on = True
     switch.async_write_ha_state = MagicMock()
     async def refresh_off():
         coordinator.data = {"outputs": {"1": "OFF"}}
@@ -57,5 +56,5 @@ async def test_turn_off_writes_state(hass):
     await switch.async_turn_off()
 
     assert not switch.is_on
-    switch.async_write_ha_state.assert_called_once()
+    switch.async_write_ha_state.assert_not_called()
     switch.coordinator.async_request_refresh.assert_called_once()

@@ -42,7 +42,6 @@ class SatelOutputSwitch(SatelEntity, SwitchEntity):
         self._output_id = output_id
         self._attr_name = name
         self._attr_unique_id = f"satel_output_{output_id}"
-        self._attr_is_on = False
 
     @property
     def is_on(self) -> bool:
@@ -58,8 +57,6 @@ class SatelOutputSwitch(SatelEntity, SwitchEntity):
         except ConnectionError as err:
             _LOGGER.warning("Failed to turn on output %s: %s", self._output_id, err)
             return
-        self._attr_is_on = True
-        self.async_write_ha_state()
         await self.coordinator.async_request_refresh()
 
     async def async_turn_off(self, **kwargs) -> None:  # noqa: D401
@@ -69,7 +66,5 @@ class SatelOutputSwitch(SatelEntity, SwitchEntity):
         except ConnectionError as err:
             _LOGGER.warning("Failed to turn off output %s: %s", self._output_id, err)
             return
-        self._attr_is_on = False
-        self.async_write_ha_state()
         await self.coordinator.async_request_refresh()
 
