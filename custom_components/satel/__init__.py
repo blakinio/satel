@@ -93,7 +93,7 @@ class SatelHub:
 
     async def connect(self) -> None:
         """Create connection to the alarm using the official protocol."""
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         self._satel = AsyncSatel(self._host, self._port, loop)
         # Apply network tuning if available on the underlying library
         if hasattr(self._satel, "_keep_alive_timeout"):
