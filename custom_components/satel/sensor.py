@@ -22,18 +22,19 @@ async def async_setup_entry(
     data = hass.data[DOMAIN][entry.entry_id]
     hub: SatelHub = data["hub"]
     devices = data.get("devices", {})
+    coordinator = data["coordinator"]
 
     entities: list[SensorEntity] = []
     zones = devices.get("zones") or []
     if zones:
         entities.extend(
-            SatelZoneSensor(hub, zone["id"], zone.get("name", zone["id"]))
+            SatelZoneSensor(hub, coordinator, zone["id"], zone.get("name", zone["id"]))
             for zone in zones
         )
     else:
-        entities.append(SatelStatusSensor(hub))
+        entities.append(SatelStatusSensor(hub, coordinator))
 
-    async_add_entities(entities, True)
+    async_add_entities(entities)
 
 
 class SatelZoneSensor(SatelEntity, SensorEntity):
@@ -41,23 +42,17 @@ class SatelZoneSensor(SatelEntity, SensorEntity):
 
     _attr_translation_key = "zone_status"
 
-    def __init__(self, hub: SatelHub, zone_id: str, name: str) -> None:
-        super().__init__(hub)
+    def __init__(
+        self, hub: SatelHub, coordinator, zone_id: str, name: str
+    ) -> None:
+        super().__init__(hub, coordinator)
         self._zone_id = zone_id
         self._attr_name = f"{name} status"
         self._attr_unique_id = f"satel_zone_status_{zone_id}"
-        self._attr_native_value = None
 
-    async def async_update(self) -> None:
-        try:
-            self._attr_native_value = await self._hub.send_command(
-                f"ZONE {self._zone_id} STATUS"
-            )
-            self._attr_available = True
-        except ConnectionError as err:
-            _LOGGER.warning("Failed to update zone %s status: %s", self._zone_id, err)
-            self._attr_native_value = None
-            self._attr_available = False
+    @property
+    def native_value(self) -> str | None:
+        return self.coordinator.data.get("zones", {}).get(self._zone_id)
 
 
 class SatelStatusSensor(SatelEntity, SensorEntity):
@@ -66,13 +61,10 @@ class SatelStatusSensor(SatelEntity, SensorEntity):
     _attr_unique_id = "satel_status"
     _attr_name = "Satel Status"
 
-    async def async_update(self) -> None:
-        try:
-            status = await self._hub.get_status()
-            self._attr_native_value = status.get("raw")
-            self._attr_available = True
-        except ConnectionError as err:
-            _LOGGER.warning("Failed to update status: %s", err)
-            self._attr_native_value = None
-            self._attr_available = False
+    def __init__(self, hub: SatelHub, coordinator) -> None:
+        super().__init__(hub, coordinator)
+
+    @property
+    def native_value(self) -> str | None:
+        return self.coordinator.data.get("alarm")
 

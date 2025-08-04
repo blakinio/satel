@@ -4,15 +4,17 @@ from __future__ import annotations
 
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import Entity
+from homeassistant.helpers.update_coordinator import CoordinatorEntity, DataUpdateCoordinator
 
 from .const import DOMAIN
 from . import SatelHub
 
 
-class SatelEntity(Entity):
-    """Representation of a Satel entity."""
+class SatelEntity(CoordinatorEntity):
+    """Representation of a Satel entity using a coordinator."""
 
-    def __init__(self, hub: SatelHub) -> None:
+    def __init__(self, hub: SatelHub, coordinator: DataUpdateCoordinator) -> None:
+        super().__init__(coordinator)
         self._hub = hub
 
     @property
