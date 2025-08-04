@@ -23,6 +23,7 @@
     },
     "error": {
       "cannot_connect": "Nie udało się połączyć",
+      "incompatible": "Niekompatybilny panel lub biblioteka",
       "unknown": "Nieoczekiwany błąd"
     }
   },

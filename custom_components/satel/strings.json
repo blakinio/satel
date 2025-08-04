@@ -23,6 +23,7 @@
     },
     "error": {
       "cannot_connect": "Failed to connect",
+      "incompatible": "Incompatible panel or library",
       "unknown": "Unexpected error"
     }
   }
