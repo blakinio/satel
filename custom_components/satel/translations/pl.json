@@ -13,11 +13,11 @@
       },
       "select": {
         "title": "Wybierz urządzenia",
-        "description": "Wybierz strefy i wyjścia do dodania.",
+        "description": "Wybierz partycje, strefy i wyjścia do dodania.",
         "data": {
           "zones": "Strefy",
           "outputs": "Wyjścia",
-          "partitions": "Strefy"
+          "partitions": "Partycje"
         }
       }
     },

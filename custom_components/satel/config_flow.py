@@ -9,7 +9,7 @@ import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.const import CONF_HOST, CONF_PORT
 from homeassistant.data_entry_flow import FlowResult
-from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers import selector
 
 from . import SatelHub
 from .const import (
@@ -85,9 +85,9 @@ class SatelConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         data_schema = vol.Schema(
             {
-                vol.Required(CONF_HOST, default=DEFAULT_HOST): str,
-                vol.Required(CONF_PORT, default=DEFAULT_PORT): int,
-                vol.Required(CONF_CODE): str,
+                vol.Required(CONF_HOST, default=DEFAULT_HOST): selector.TextSelector(),
+                vol.Required(CONF_PORT, default=DEFAULT_PORT): selector.NumberSelector(),
+                vol.Required(CONF_CODE): selector.TextSelector(),
             }
         )
         return self.async_show_form(
@@ -109,25 +109,44 @@ class SatelConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 },
             )
 
-        zone_options = {z["id"]: z["name"] for z in self._devices.get("zones", [])}
-        output_options = {
-            o["id"]: o["name"] for o in self._devices.get("outputs", [])
-        }
-        partition_options = {
-            p["id"]: p.get("name", p["id"])
+        zone_values = [z["id"] for z in self._devices.get("zones", [])]
+        zone_options = [
+            selector.SelectOptionDict(value=z["id"], label=z["name"])
+            for z in self._devices.get("zones", [])
+        ]
+        output_values = [o["id"] for o in self._devices.get("outputs", [])]
+        output_options = [
+            selector.SelectOptionDict(value=o["id"], label=o["name"])
+            for o in self._devices.get("outputs", [])
+        ]
+        partition_values = [p["id"] for p in self._devices.get("partitions", [])]
+        partition_options = [
+            selector.SelectOptionDict(
+                value=p["id"], label=p.get("name", p["id"])
+            )
             for p in self._devices.get("partitions", [])
-        }
+        ]
 
         data_schema = vol.Schema(
             {
                 vol.Optional(
-                    "partitions", default=list(partition_options)
-                ): cv.multi_select(partition_options),
-                vol.Optional("zones", default=list(zone_options)): cv.multi_select(
-                    zone_options
+                    "partitions", default=partition_values
+                ): selector.SelectSelector(
+                    selector.SelectSelectorConfig(
+                        options=partition_options, multiple=True
+                    )
                 ),
-                vol.Optional("outputs", default=list(output_options)): cv.multi_select(
-                    output_options
+                vol.Optional("zones", default=zone_values): selector.SelectSelector(
+                    selector.SelectSelectorConfig(
+                        options=zone_options, multiple=True
+                    )
+                ),
+                vol.Optional(
+                    "outputs", default=output_values
+                ): selector.SelectSelector(
+                    selector.SelectSelectorConfig(
+                        options=output_options, multiple=True
+                    )
                 ),
             }
         )
