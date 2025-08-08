@@ -50,8 +50,8 @@ class SatelZoneBinarySensor(SatelEntity, BinarySensorEntity):
     ) -> None:
         super().__init__(hub, coordinator)
         self._zone_id = zone_id
-        self._attr_name = name
         self._attr_unique_id = f"satel_zone_{zone_id}"
+        self._attr_translation_placeholders = {"zone": name}
 
     @property
     def is_on(self) -> bool | None:
@@ -74,8 +74,8 @@ class SatelZoneBinarySensor(SatelEntity, BinarySensorEntity):
 class SatelAlarmBinarySensor(SatelEntity, BinarySensorEntity):
     """Binary sensor representing overall alarm state."""
 
-    _attr_unique_id = "satel_alarm"
-    _attr_name = "Satel Alarm"
+    _attr_unique_id = "alarm"
+    _attr_translation_key = "alarm"
 
     def __init__(self, hub: SatelHub, coordinator) -> None:
         super().__init__(hub, coordinator)

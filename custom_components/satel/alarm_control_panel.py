@@ -42,13 +42,14 @@ class SatelAlarmPanel(SatelEntity, AlarmControlPanelEntity):
         | AlarmControlPanelEntityFeature.ARM_HOME
         | AlarmControlPanelEntityFeature.ARM_NIGHT
     )
+    _attr_translation_key = "partition"
 
     def __init__(self, hub: SatelHub, coordinator, partition: str) -> None:
         super().__init__(hub, coordinator)
         self._partition = partition
-        self._attr_name = f"Satel Alarm {partition}"
         self._attr_unique_id = f"satel_alarm_{partition}"
         self._attr_state = STATE_ALARM_DISARMED
+        self._attr_translation_placeholders = {"partition": partition}
 
     async def async_alarm_arm_away(self, code: str | None = None) -> None:
         await self._hub.arm(self._partition)

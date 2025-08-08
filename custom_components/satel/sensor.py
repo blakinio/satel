@@ -46,8 +46,8 @@ class SatelZoneSensor(SatelEntity, SensorEntity):
     ) -> None:
         super().__init__(hub, coordinator)
         self._zone_id = zone_id
-        self._attr_name = f"{name} status"
         self._attr_unique_id = f"satel_zone_status_{zone_id}"
+        self._attr_translation_placeholders = {"zone": name}
 
     @property
     def native_value(self) -> str | None:
@@ -73,8 +73,8 @@ class SatelZoneSensor(SatelEntity, SensorEntity):
 class SatelStatusSensor(SatelEntity, SensorEntity):
     """Sensor returning raw status string."""
 
-    _attr_unique_id = "satel_status"
-    _attr_name = "Satel Status"
+    _attr_unique_id = "status"
+    _attr_translation_key = "status"
 
     def __init__(self, hub: SatelHub, coordinator) -> None:
         super().__init__(hub, coordinator)

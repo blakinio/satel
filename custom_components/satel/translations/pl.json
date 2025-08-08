@@ -28,20 +28,44 @@
     }
   },
   "entity": {
+    "alarm_control_panel": {
+      "partition": {
+        "name": "Strefa {partition}",
+        "state": {
+          "armed_away": "Czuwanie poza domem",
+          "armed_home": "Czuwanie w domu",
+          "armed_night": "Czuwanie nocne",
+          "disarmed": "Rozbrojona",
+          "pending": "Oczekiwanie",
+          "triggered": "Alarm"
+        }
+      }
+    },
     "binary_sensor": {
       "zone": {
-        "name": "Strefa",
+        "name": "{zone}",
+        "state": {
+          "on": "Naruszona",
+          "off": "Normalna"
+        },
         "state_attributes": {
           "tamper": {"name": "Sabotaż"},
           "troubles": {"name": "Awaria"},
           "bypass": {"name": "By-pass"},
           "alarm_memory": {"name": "Pamięć alarmu"}
         }
+      },
+      "alarm": {
+        "name": "Alarm",
+        "state": {
+          "on": "Alarm",
+          "off": "Normalny"
+        }
       }
     },
     "sensor": {
       "zone_status": {
-        "name": "Status strefy",
+        "name": "Status {zone}",
         "state": {
           "on": "Naruszona",
           "off": "Normalna",
@@ -49,6 +73,18 @@
           "trouble": "Awarie",
           "bypass": "By-pass",
           "alarm_memory": "Pamięć alarmu"
+        }
+      },
+      "status": {
+        "name": "Status",
+        "state": {
+          "armed_away": "Czuwanie poza domem",
+          "armed_home": "Czuwanie w domu",
+          "armed_night": "Czuwanie nocne",
+          "disarmed": "Rozbrojona",
+          "pending": "Oczekiwanie",
+          "triggered": "Alarm",
+          "alarm": "Alarm"
         }
       }
     },
@@ -59,4 +95,3 @@
     }
   }
 }
-

@@ -26,5 +26,72 @@
       "incompatible": "Incompatible panel or library",
       "unknown": "Unexpected error"
     }
+  },
+  "entity": {
+    "alarm_control_panel": {
+      "partition": {
+        "name": "Partition {partition}",
+        "state": {
+          "armed_away": "Armed away",
+          "armed_home": "Armed home",
+          "armed_night": "Armed night",
+          "disarmed": "Disarmed",
+          "pending": "Pending",
+          "triggered": "Triggered"
+        }
+      }
+    },
+    "binary_sensor": {
+      "zone": {
+        "name": "{zone}",
+        "state": {
+          "on": "Violated",
+          "off": "Normal"
+        },
+        "state_attributes": {
+          "tamper": {"name": "Tamper"},
+          "troubles": {"name": "Trouble"},
+          "bypass": {"name": "Bypass"},
+          "alarm_memory": {"name": "Alarm memory"}
+        }
+      },
+      "alarm": {
+        "name": "Alarm",
+        "state": {
+          "on": "Triggered",
+          "off": "Normal"
+        }
+      }
+    },
+    "sensor": {
+      "zone_status": {
+        "name": "{zone} status",
+        "state": {
+          "on": "Violated",
+          "off": "Normal",
+          "tamper": "Tamper",
+          "trouble": "Trouble",
+          "bypass": "Bypass",
+          "alarm_memory": "Alarm memory"
+        }
+      },
+      "status": {
+        "name": "Status",
+        "state": {
+          "armed_away": "Armed away",
+          "armed_home": "Armed home",
+          "armed_night": "Armed night",
+          "disarmed": "Disarmed",
+          "pending": "Pending",
+          "triggered": "Triggered",
+          "alarm": "Alarm"
+        }
+      }
+    },
+    "switch": {
+      "output": {
+        "name": "Output"
+      }
+    }
   }
 }
