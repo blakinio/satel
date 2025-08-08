@@ -13,7 +13,7 @@
       },
       "select": {
         "title": "Select devices",
-        "description": "Choose zones and outputs to add.",
+        "description": "Choose partitions, zones and outputs to add.",
         "data": {
           "zones": "Zones",
           "outputs": "Outputs",
