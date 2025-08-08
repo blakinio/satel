@@ -2,6 +2,7 @@ from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 from homeassistant.const import CONF_HOST, CONF_PORT
+from homeassistant.exceptions import ConfigEntryNotReady
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.satel.const import (
@@ -208,3 +209,62 @@ async def test_setup_uses_options(hass, enable_custom_integrations):
         reconnect_delay=3,
         encryption_method=DEFAULT_ENCRYPTION_METHOD,
     )
+
+
+@pytest.mark.asyncio
+async def test_monitor_task_cancelled_on_unload(hass, enable_custom_integrations):
+    """Ensure background task is registered and cancelled when unloading."""
+    entry = MockConfigEntry(domain=DOMAIN, data={CONF_HOST: DEFAULT_HOST, CONF_PORT: DEFAULT_PORT})
+    entry.add_to_hass(hass)
+
+    monitor = Mock()
+
+    with patch("custom_components.satel.SatelHub.connect", AsyncMock()), \
+        patch(
+            "custom_components.satel.SatelHub.start_monitoring",
+            AsyncMock(return_value=monitor),
+        ), \
+        patch(
+            "custom_components.satel.SatelHub.discover_devices",
+            AsyncMock(return_value={"zones": [], "outputs": []}),
+        ), \
+        patch(
+            "custom_components.satel.SatelHub.get_overview",
+            AsyncMock(
+                return_value={
+                    "alarm": {},
+                    "zones": {},
+                    "outputs": {},
+                    "troubles": {},
+                    "tamper": {},
+                    "bypass": {},
+                    "alarm_memory": {},
+                }
+            ),
+        ):
+        assert await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        assert not monitor.cancel.called
+
+        await hass.config_entries.async_unload(entry.entry_id)
+        await hass.async_block_till_done()
+
+        monitor.cancel.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_setup_connection_error_raises_not_ready(hass, enable_custom_integrations):
+    """Connection errors during setup should raise ConfigEntryNotReady."""
+    entry = MockConfigEntry(domain=DOMAIN, data={CONF_HOST: DEFAULT_HOST, CONF_PORT: DEFAULT_PORT})
+    entry.add_to_hass(hass)
+
+    with patch(
+        "custom_components.satel.SatelHub.connect", AsyncMock(side_effect=ConnectionError)
+    ), patch("custom_components.satel.SatelHub.async_close", AsyncMock()) as mock_close:
+        from custom_components.satel import async_setup_entry
+
+        with pytest.raises(ConfigEntryNotReady):
+            await async_setup_entry(hass, entry)
+
+    mock_close.assert_awaited_once()
