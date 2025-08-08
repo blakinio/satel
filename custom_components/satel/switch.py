@@ -8,8 +8,7 @@ from homeassistant.components.switch import SwitchEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
-from . import SatelHub
-from .const import DOMAIN
+from . import SatelHub, SatelRuntimeData
 from .entity import SatelEntity
 
 _LOGGER = logging.getLogger(__name__)
@@ -19,10 +18,10 @@ async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities
 ) -> None:
     """Set up Satel switches based on a config entry."""
-    data = hass.data[DOMAIN][entry.entry_id]
-    hub: SatelHub = data["hub"]
-    devices = data.get("devices", {})
-    coordinator = data["coordinator"]
+    data: SatelRuntimeData = entry.runtime_data
+    hub: SatelHub = data.hub
+    devices = data.devices or {}
+    coordinator = data.coordinator
 
     entities: list[SwitchEntity] = [
         SatelOutputSwitch(hub, coordinator, output["id"], output.get("name", output["id"]))

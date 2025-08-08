@@ -17,8 +17,7 @@ from homeassistant.const import (
 )
 from homeassistant.core import HomeAssistant
 
-from . import SatelHub
-from .const import DOMAIN
+from . import SatelHub, SatelRuntimeData
 from .entity import SatelEntity
 
 
@@ -26,9 +25,9 @@ async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities
 ) -> None:
     """Set up Satel alarm control panel from a config entry."""
-    data = hass.data[DOMAIN][entry.entry_id]
-    hub: SatelHub = data["hub"]
-    coordinator = data["coordinator"]
+    data: SatelRuntimeData = entry.runtime_data
+    hub: SatelHub = data.hub
+    coordinator = data.coordinator
     partitions = entry.data.get("partitions") or ["1"]
     async_add_entities(
         [SatelAlarmPanel(hub, coordinator, part) for part in partitions]
