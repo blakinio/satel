@@ -136,7 +136,9 @@ class SatelHub:
         if not connected:
             raise ConnectionError("Unable to connect to Satel panel")
 
-    async def start_monitoring(self, coordinator: DataUpdateCoordinator) -> None:
+    async def start_monitoring(
+        self, hass: HomeAssistant, coordinator: DataUpdateCoordinator
+    ) -> asyncio.Task:
         """Start monitoring alarm events and push updates to coordinator."""
 
         if not self._satel:
@@ -202,13 +204,16 @@ class SatelHub:
                     self._state["alarm"][key] = "DISARMED"
             _schedule_update()
 
-        self._monitor_task = asyncio.create_task(
+        self._monitor_task = hass.async_create_background_task(
             self._satel.monitor_status(
                 alarm_status_callback=alarm_cb,
                 zone_changed_callback=zone_cb,
                 output_changed_callback=output_cb,
-            )
+            ),
+            name="satel-monitor",
         )
+
+        return self._monitor_task
 
     async def async_close(self) -> None:
         """Stop monitoring and close connection."""
@@ -359,7 +364,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         config_entry=entry,
     )
     await coordinator.async_config_entry_first_refresh()
-    await hub.start_monitoring(coordinator)
+    monitor_task = await hub.start_monitoring(hass, coordinator)
+    entry.async_on_unload(monitor_task.cancel)
 
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = {
         "hub": hub,
