@@ -1,6 +1,4 @@
-from unittest.mock import AsyncMock, patch
-
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 from homeassistant.const import CONF_HOST, CONF_PORT
@@ -29,7 +27,10 @@ async def test_setup_creates_entities(hass, enable_custom_integrations):
     entry.add_to_hass(hass)
 
     with patch("custom_components.satel.SatelHub.connect", AsyncMock()), \
-        patch("custom_components.satel.SatelHub.start_monitoring", AsyncMock()), \
+        patch(
+            "custom_components.satel.SatelHub.start_monitoring",
+            AsyncMock(return_value=Mock()),
+        ), \
         patch(
             "custom_components.satel.SatelHub.discover_devices",
             AsyncMock(return_value={"zones": [], "outputs": []}),
@@ -67,7 +68,10 @@ async def test_switch_services(hass, enable_custom_integrations):
     entry.add_to_hass(hass)
 
     with patch("custom_components.satel.SatelHub.connect", AsyncMock()), \
-        patch("custom_components.satel.SatelHub.start_monitoring", AsyncMock()), \
+        patch(
+            "custom_components.satel.SatelHub.start_monitoring",
+            AsyncMock(return_value=Mock()),
+        ), \
         patch(
             "custom_components.satel.SatelHub.discover_devices",
             AsyncMock(
@@ -173,7 +177,7 @@ async def test_setup_uses_options(hass, enable_custom_integrations):
     with patch("custom_components.satel.SatelHub") as hub_cls:
         hub = hub_cls.return_value
         hub.connect = AsyncMock()
-        hub.start_monitoring = AsyncMock()
+        hub.start_monitoring = AsyncMock(return_value=Mock())
         hub.discover_devices = AsyncMock(return_value={"zones": [], "outputs": []})
         hub.get_overview = AsyncMock(
             return_value={

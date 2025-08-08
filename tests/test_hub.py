@@ -36,7 +36,7 @@ async def test_monitoring_updates_state(hass):
             config_entry=MockConfigEntry(domain="satel"),
         )
         await coordinator.async_refresh()
-        await hub.start_monitoring(coordinator)
+        await hub.start_monitoring(hass, coordinator)
 
         zone_cb = satel.monitor_status.call_args.kwargs["zone_changed_callback"]
         output_cb = satel.monitor_status.call_args.kwargs["output_changed_callback"]
