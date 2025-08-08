@@ -13,6 +13,7 @@ import logging
 from contextlib import suppress
 from datetime import timedelta
 from typing import Any, Callable
+from dataclasses import dataclass
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST, CONF_PORT
@@ -39,7 +40,6 @@ from .const import (
     DEFAULT_UPDATE_INTERVAL,
     DEFAULT_RECONNECT_DELAY,
     DEFAULT_ENCRYPTION_METHOD,
-    DOMAIN,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -304,6 +304,15 @@ class SatelHub:
         await self.disarm(partition)
 
 
+@dataclass
+class SatelRuntimeData:
+    """Runtime data stored in the config entry."""
+
+    hub: SatelHub
+    devices: dict[str, Any]
+    coordinator: DataUpdateCoordinator[dict[str, Any]] | None
+
+
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:  # pragma: no cover - YAML not supported
     return True
 
@@ -361,11 +370,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     await coordinator.async_config_entry_first_refresh()
     await hub.start_monitoring(coordinator)
 
-    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = {
-        "hub": hub,
-        "devices": await hub.discover_devices(),
-        "coordinator": coordinator,
-    }
+    entry.runtime_data = SatelRuntimeData(
+        hub=hub,
+        devices=await hub.discover_devices(),
+        coordinator=coordinator,
+    )
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
@@ -373,9 +382,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
-    if unload_ok:
-        data = hass.data[DOMAIN].pop(entry.entry_id)
-        hub: SatelHub = data["hub"]
-        await hub.async_close()
+    if unload_ok and entry.runtime_data:
+        await entry.runtime_data.hub.async_close()
+        entry.runtime_data = None
     return unload_ok
 

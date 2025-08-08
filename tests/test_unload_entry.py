@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import AsyncMock
 
-from custom_components.satel import SatelHub, async_unload_entry
+from custom_components.satel import SatelHub, SatelRuntimeData, async_unload_entry
 from custom_components.satel.const import DOMAIN
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
@@ -14,7 +14,7 @@ async def test_unload_entry_closes_connection_and_removes_entry(hass):
     hub = SatelHub("host", 1234, "code")
     hub.async_close = AsyncMock()
 
-    hass.data[DOMAIN] = {entry.entry_id: {"hub": hub, "devices": {}, "coordinator": None}}
+    entry.runtime_data = SatelRuntimeData(hub, {}, None)
 
     hass.config_entries.async_unload_platforms = AsyncMock(return_value=True)
 
@@ -22,4 +22,4 @@ async def test_unload_entry_closes_connection_and_removes_entry(hass):
 
     assert result
     hub.async_close.assert_awaited_once()
-    assert entry.entry_id not in hass.data[DOMAIN]
+    assert entry.runtime_data is None

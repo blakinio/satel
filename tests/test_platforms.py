@@ -4,11 +4,10 @@ import pytest
 
 import logging
 
-from custom_components.satel import SatelHub
+from custom_components.satel import SatelHub, SatelRuntimeData
 from custom_components.satel.const import DOMAIN
 from custom_components.satel import binary_sensor, sensor, switch
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
-from pytest_homeassistant_custom_component.common import MockConfigEntry
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 
@@ -43,9 +42,7 @@ async def test_binary_sensor_setup_entry(hass, enable_custom_integrations):
         update_method=_update,
         config_entry=MockConfigEntry(domain=DOMAIN),
     )
-    hass.data[DOMAIN] = {
-        entry.entry_id: {"hub": hub, "devices": devices, "coordinator": coordinator}
-    }
+    entry.runtime_data = SatelRuntimeData(hub, devices, coordinator)
 
     add_entities = MagicMock()
     await binary_sensor.async_setup_entry(hass, entry, add_entities)
@@ -87,9 +84,7 @@ async def test_sensor_setup_entry(hass, enable_custom_integrations):
         update_method=_update2,
         config_entry=MockConfigEntry(domain=DOMAIN),
     )
-    hass.data[DOMAIN] = {
-        entry.entry_id: {"hub": hub, "devices": devices, "coordinator": coordinator}
-    }
+    entry.runtime_data = SatelRuntimeData(hub, devices, coordinator)
 
     add_entities = MagicMock()
     await sensor.async_setup_entry(hass, entry, add_entities)
@@ -131,9 +126,7 @@ async def test_switch_setup_entry(hass, enable_custom_integrations):
         update_method=_update3,
         config_entry=MockConfigEntry(domain=DOMAIN),
     )
-    hass.data[DOMAIN] = {
-        entry.entry_id: {"hub": hub, "devices": devices, "coordinator": coordinator}
-    }
+    entry.runtime_data = SatelRuntimeData(hub, devices, coordinator)
 
     add_entities = MagicMock()
     await switch.async_setup_entry(hass, entry, add_entities)
